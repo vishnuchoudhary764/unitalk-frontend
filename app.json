@@ -22,7 +22,9 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.vishnu_choudhary764.uniTalk"
+      "package": "com.vishnu_choudhary764.uniTalk",
+      "enableProguardInReleaseBuilds": true,
+      "enableShrinkResourcesInReleaseBuilds": true
     },
     "web": {
       "favicon": "./src/assets/uniTalk.png"
