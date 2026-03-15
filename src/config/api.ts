@@ -1,2 +1,2 @@
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://unitalk-backend-izeo.onrender.com";
 export default BASE_URL;

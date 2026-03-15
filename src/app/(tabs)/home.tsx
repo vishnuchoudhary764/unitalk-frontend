@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
@@ -11,6 +12,7 @@ import {
   Animated,
   Dimensions,
   TouchableWithoutFeedback,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,10 +20,12 @@ import { io, Socket } from "socket.io-client";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import BottomNav from "@/src/components/BottomNav";
+import { useRequestCount } from "@/src/context/RequestCountContext";
 import BASE_URL from "../../config/api";
 
 const { width, height } = Dimensions.get("window");
+
+const NAV_BOTTOM_PADDING = Platform.OS === "ios" ? 100 : 88;
 
 const GRADIENT_PAIRS: [string, string][] = [
   ["#667EEA", "#764BA2"],
@@ -59,9 +63,9 @@ interface Request {
   mutualFriends?: number;
 }
 
-
 export default function HomeScreen() {
   const router = useRouter();
+  const { setRequestCount } = useRequestCount();
   const socketRef = useRef<Socket | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
@@ -153,7 +157,10 @@ export default function HomeScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) setRequests(data.requests ?? []);
+      if (data.success) {
+        setRequests(data.requests ?? []);
+        setRequestCount((data.requests ?? []).length); 
+      }
     } catch (e) { console.log("fetchFriendRequests error:", e); }
   }, []);
 
@@ -275,7 +282,11 @@ export default function HomeScreen() {
 
       <View style={styles.headerDivider} />
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
           <View style={styles.heroSection}>
@@ -337,7 +348,6 @@ export default function HomeScreen() {
                               <Image source={{ uri: request.profilePic }} style={styles.requestAvatarImage} />
                             ) : (
                               <LinearGradient colors={["#667EEA", "#764BA2"]} style={styles.requestAvatarGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                                
                                 <Ionicons name="person" size={24} color="#FFFFFF" />
                               </LinearGradient>
                             )}
@@ -379,8 +389,7 @@ export default function HomeScreen() {
                             <Image source={{ uri: friend.profilePic }} style={styles.friendAvatarImage} />
                           ) : (
                             <LinearGradient colors={getGradient(fid)} style={styles.friendAvatarGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                                <Ionicons name="person" size={24} color="#FFFFFF" />
-
+                              <Ionicons name="person" size={24} color="#FFFFFF" />
                             </LinearGradient>
                           )}
                           {friend.isOnline && <View style={styles.onlineIndicator} />}
@@ -402,7 +411,6 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={{ height: 50 }} />
         </Animated.View>
       </ScrollView>
 
@@ -477,8 +485,6 @@ export default function HomeScreen() {
           </Animated.View>
         </>
       )}
-
-      <BottomNav />
     </SafeAreaView>
   );
 }
@@ -489,7 +495,7 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 18, paddingTop: 4, paddingBottom: 4,
+    paddingHorizontal: 18, paddingTop:16, paddingBottom: 4,
     backgroundColor: "rgba(255,255,255,0.85)",
   },
   brandContainer: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -506,8 +512,8 @@ const styles = StyleSheet.create({
   profileIconWrapper: { width: "100%", height: "100%", justifyContent: "center", alignItems: "center" },
   headerDivider: { height: 1, backgroundColor: "rgba(139, 92, 246, 0.12)" },
 
-  content: { flex: 1, paddingTop: 8 },
-  scrollContent: { paddingBottom: 20 },
+  content: { flex: 1 },
+  scrollContent: { paddingTop: 8, paddingBottom: NAV_BOTTOM_PADDING },
 
   heroSection: { marginHorizontal: 16, marginTop: 14, marginBottom: 24, borderRadius: 24, overflow: "hidden", elevation: 10, shadowColor: "#4835d3", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 16 },
   heroGradient: { padding: 28, position: "relative", minHeight: 220 },
@@ -517,33 +523,15 @@ const styles = StyleSheet.create({
   heroDescription: { fontSize: 15, color: "rgba(255,255,255,0.93)", textAlign: "center", lineHeight: 23, marginBottom: 28, fontWeight: "500" },
 
   startButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 16,
-    gap: 8,
-    elevation: 6,
-    shadowColor: "#4835d3",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    backgroundColor: "#FFFFFF", paddingHorizontal: 30, paddingVertical: 15,
+    borderRadius: 16, gap: 8, elevation: 6,
+    shadowColor: "#4835d3", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8,
   },
-  startButtonSearching: {
-    backgroundColor: "rgba(255,255,255,0.88)",
-  },
+  startButtonSearching: { backgroundColor: "rgba(255,255,255,0.88)" },
   startButtonText: { fontSize: 15, fontWeight: "700", color: "#667EEA" },
   startButtonTextSearching: { color: "#7c3aed" },
-
-  searchingLabel: {
-    marginTop: 14,
-    fontSize: 12,
-    color: "rgba(255,255,255,0.7)",
-    fontWeight: "500",
-    letterSpacing: 0.2,
-  },
+  searchingLabel: { marginTop: 14, fontSize: 12, color: "rgba(255,255,255,0.7)", fontWeight: "500", letterSpacing: 0.2 },
 
   section: { marginBottom: 28 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 16 },
@@ -560,7 +548,6 @@ const styles = StyleSheet.create({
   requestAvatarWrapper: { width: 72, height: 72, alignSelf: "center", marginBottom: 16, borderRadius: 36, overflow: "hidden" },
   requestAvatarImage: { width: 72, height: 72, borderRadius: 36, backgroundColor: "#F1F5F9" },
   requestAvatarGradient: { width: 72, height: 72, borderRadius: 36, justifyContent: "center", alignItems: "center" },
-  avatarEmoji: { fontSize: 30 },
   requestInfo: { alignItems: "center", marginBottom: 16 },
   requestName: { fontSize: 16, fontWeight: "700", color: "#1F2937", marginBottom: 4 },
   mutualFriends: { fontSize: 13, color: "#6B7280", fontWeight: "500" },
@@ -577,11 +564,9 @@ const styles = StyleSheet.create({
   friendAvatarWrapper: { width: 52, height: 52, position: "relative" },
   friendAvatarImage: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#F1F5F9" },
   friendAvatarGradient: { width: 52, height: 52, borderRadius: 26, justifyContent: "center", alignItems: "center" },
-  friendAvatarEmoji: { fontSize: 24 },
   onlineIndicator: { position: "absolute", bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, backgroundColor: "#10B981", borderWidth: 2, borderColor: "#FFFFFF" },
   friendInfo: { flex: 1 },
   friendName: { fontSize: 16, fontWeight: "700", color: "#1F2937", marginBottom: 3 },
-  friendStatusRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   friendStatus: { fontSize: 13, color: "#9CA3AF", fontWeight: "500" },
   friendStatusOnline: { color: "#10B981", fontWeight: "600" },
   emptyText: { textAlign: "center", color: "#9CA3AF", fontSize: 14, paddingVertical: 20 },

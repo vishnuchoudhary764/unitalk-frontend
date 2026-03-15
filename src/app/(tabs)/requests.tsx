@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
+  Alert,
   TouchableOpacity,
   FlatList,
   StyleSheet,
@@ -13,13 +14,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import BottomNav from "@/src/components/BottomNav";
+import { useRequestCount } from "@/src/context/RequestCountContext";
 import BASE_URL from "../../config/api";
 
+const NAV_BOTTOM_PADDING = Platform.OS === "ios" ? 100 : 88;
 
 export default function Requests() {
   const router = useRouter();
+  const { setRequestCount } = useRequestCount();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -29,17 +31,8 @@ export default function Requests() {
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        tension: 40,
-        friction: 7,
-        useNativeDriver: true,
-      }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 7, useNativeDriver: true }),
     ]).start();
 
     fetchRequests();
@@ -52,7 +45,10 @@ export default function Requests() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) setRequests(data.requests);
+      if (data.success) {
+        setRequests(data.requests);
+        setRequestCount(data.requests.length); 
+      }
     } finally {
       setLoading(false);
     }
@@ -63,13 +59,12 @@ export default function Requests() {
     const token = await AsyncStorage.getItem("token");
     await fetch(`${BASE_URL}/api/requests/accept`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ senderId: userId }),
     });
-    setRequests((prev) => prev.filter((r) => r._id !== userId));
+    const updated = requests.filter((r) => r._id !== userId);
+    setRequests(updated);
+    setRequestCount(updated.length);
     setProcessingId(null);
   };
 
@@ -78,17 +73,14 @@ export default function Requests() {
     const token = await AsyncStorage.getItem("token");
     await fetch(`${BASE_URL}/api/requests/reject`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ senderId: userId }),
     });
-    setRequests((prev) => prev.filter((r) => r._id !== userId));
+    const updated = requests.filter((r) => r._id !== userId);
+    setRequests(updated);
+    setRequestCount(updated.length);
     setProcessingId(null);
   };
-
- 
 
   const renderItem = ({ item, index }: { item: any; index: number }) => {
     const isProcessing = processingId === item._id;
@@ -117,7 +109,6 @@ export default function Requests() {
                 end={{ x: 1, y: 1 }}
               >
                 <Ionicons name="person" size={24} color="#FFFFFF" />
-                
               </LinearGradient>
               <View style={styles.newBadge}>
                 <View style={styles.newBadgeDot} />
@@ -177,16 +168,10 @@ export default function Requests() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={["#F8F9FA", "#E9ECEF", "#F1F3F5"]}
-        style={StyleSheet.absoluteFill}
-      />
+      <LinearGradient colors={["#F8F9FA", "#E9ECEF", "#F1F3F5"]} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#1F2937" />
         </TouchableOpacity>
 
@@ -221,7 +206,7 @@ export default function Requests() {
       <FlatList
         data={requests}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: NAV_BOTTOM_PADDING }]}
         showsVerticalScrollIndicator={false}
         ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
         renderItem={renderItem}
@@ -230,10 +215,7 @@ export default function Requests() {
             <Animated.View
               style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
             >
-              <LinearGradient
-                colors={["#F3E8FF", "#EEF2FF"]}
-                style={styles.emptyIconCircle}
-              >
+              <LinearGradient colors={["#F3E8FF", "#EEF2FF"]} style={styles.emptyIconCircle}>
                 <Ionicons name="people-outline" size={52} color="#667EEA" />
               </LinearGradient>
               <Text style={styles.emptyTitle}>All Caught Up!</Text>
@@ -241,11 +223,7 @@ export default function Requests() {
                 No pending friend requests right now.{"\n"}
                 Start an anonymous chat to meet new people.
               </Text>
-              <TouchableOpacity
-                style={styles.emptyAction}
-                onPress={() => router.push("/home")}
-                activeOpacity={0.8}
-              >
+              <TouchableOpacity style={styles.emptyAction} onPress={() => router.push("/home")} activeOpacity={0.8}>
                 <LinearGradient
                   colors={["#667EEA", "#764BA2"]}
                   start={{ x: 0, y: 0 }}
@@ -260,330 +238,136 @@ export default function Requests() {
           ) : null
         }
       />
-
-      <BottomNav requestCount={requests.length} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
+  container: { flex: 1, backgroundColor: "#F8F9FA" },
 
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, backgroundColor: "#592093",
   },
 
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
+    justifyContent: "center", alignItems: "center",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
 
-  headerCenter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+  headerCenter: { flexDirection: "row", alignItems: "center", gap: 10 },
 
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#1F2937",
-    letterSpacing: -0.5,
-  },
+  headerTitle: { fontSize: 22, fontWeight: "800", color: "#f7f8fa", letterSpacing: -0.5 },
 
-  headerBadge: {
-    backgroundColor: "#667EEA",
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
+  headerBadge: { backgroundColor: "#667EEA", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
 
-  headerBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "700",
-  },
+  headerBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
 
   refreshButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
+    justifyContent: "center", alignItems: "center",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
 
   summaryBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 16,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, gap: 12,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
   },
 
   summaryIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#EEF2FF",
-    justifyContent: "center",
-    alignItems: "center",
+    width: 36, height: 36, borderRadius: 12, backgroundColor: "#EEF2FF",
+    justifyContent: "center", alignItems: "center",
   },
 
-  summaryText: {
-    fontSize: 14,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
+  summaryText: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
 
-  summaryCount: {
-    fontWeight: "700",
-    color: "#667EEA",
-  },
+  summaryCount: { fontWeight: "700", color: "#667EEA" },
 
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 120,
-    flexGrow: 1,
-  },
+  listContent: { paddingHorizontal: 20, flexGrow: 1 },
 
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 12,
-    elevation: 3,
+    backgroundColor: "#FFFFFF", borderRadius: 20, padding: 18,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 3,
   },
 
-  cardTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-  },
+  cardTop: { flexDirection: "row", alignItems: "center", gap: 14 },
 
-  avatarWrapper: {
-    position: "relative",
-  },
+  avatarWrapper: { position: "relative" },
 
-  avatarGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  avatarEmoji: {
-    fontSize: 30,
-  },
+  avatarGradient: { width: 60, height: 60, borderRadius: 30, justifyContent: "center", alignItems: "center" },
 
   newBadge: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
+    position: "absolute", top: 2, right: 2,
+    width: 14, height: 14, borderRadius: 7, backgroundColor: "#FFFFFF",
+    justifyContent: "center", alignItems: "center",
   },
 
-  newBadgeDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: "#10B981",
-  },
+  newBadgeDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#10B981" },
 
-  userInfo: {
-    flex: 1,
-    gap: 4,
-  },
+  userInfo: { flex: 1, gap: 4 },
 
-  userName: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1F2937",
-    letterSpacing: -0.2,
-  },
+  userName: { fontSize: 17, fontWeight: "700", color: "#1F2937", letterSpacing: -0.2 },
 
-  userSubtitle: {
-    fontSize: 13,
-    color: "#6B7280",
-    fontWeight: "500",
-  },
+  userSubtitle: { fontSize: 13, color: "#6B7280", fontWeight: "500" },
 
-  tagRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginTop: 4,
-  },
+  tagRow: { flexDirection: "row", gap: 6, marginTop: 4 },
 
   tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#EEF2FF",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    flexDirection: "row", alignItems: "center", gap: 4,
+    backgroundColor: "#EEF2FF", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
   },
 
-  tagText: {
-    fontSize: 11,
-    color: "#667EEA",
-    fontWeight: "600",
-  },
+  tagText: { fontSize: 11, color: "#667EEA", fontWeight: "600" },
 
-  profileArrow: {
-    padding: 4,
-  },
+  profileArrow: { padding: 4 },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#F3F4F6",
-    marginVertical: 14,
-  },
+  divider: { height: 1, backgroundColor: "#F3F4F6", marginVertical: 14 },
 
-  actions: {
-    flexDirection: "row",
-    gap: 12,
-  },
+  actions: { flexDirection: "row", gap: 12 },
 
   rejectButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 13,
-    borderRadius: 14,
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1.5,
-    borderColor: "#FECACA",
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+    paddingVertical: 13, borderRadius: 14, backgroundColor: "#FEF2F2",
+    borderWidth: 1.5, borderColor: "#FECACA",
   },
 
-  rejectButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#EF4444",
-  },
+  rejectButtonText: { fontSize: 15, fontWeight: "700", color: "#EF4444" },
 
   acceptButton: {
-    flex: 1,
-    borderRadius: 14,
-    overflow: "hidden",
-    shadowColor: "#667EEA",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    flex: 1, borderRadius: 14, overflow: "hidden",
+    shadowColor: "#667EEA", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
 
   acceptGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 13,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 13,
   },
 
-  acceptButtonText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
+  acceptButtonText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
 
-  buttonDisabled: {
-    opacity: 0.5,
-  },
+  buttonDisabled: { opacity: 0.5 },
 
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
+  emptyState: { flex: 1, alignItems: "center", paddingTop: 80, paddingHorizontal: 32 },
 
   emptyIconCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 24,
+    width: 110, height: 110, borderRadius: 55,
+    justifyContent: "center", alignItems: "center", marginBottom: 24,
   },
 
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#1F2937",
-    marginBottom: 12,
-    letterSpacing: -0.5,
-  },
+  emptyTitle: { fontSize: 24, fontWeight: "800", color: "#1F2937", marginBottom: 12, letterSpacing: -0.5 },
 
-  emptyDescription: {
-    fontSize: 15,
-    color: "#6B7280",
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 32,
-  },
+  emptyDescription: { fontSize: 15, color: "#6B7280", textAlign: "center", lineHeight: 22, marginBottom: 32 },
 
   emptyAction: {
-    borderRadius: 16,
-    overflow: "hidden",
-    shadowColor: "#667EEA",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    borderRadius: 16, overflow: "hidden",
+    shadowColor: "#667EEA", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
   },
 
   emptyActionGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 14,
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingHorizontal: 28, paddingVertical: 14,
   },
 
-  emptyActionText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-  },
+  emptyActionText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
 });

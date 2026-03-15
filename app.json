@@ -2,10 +2,10 @@
   "expo": {
     "name": "uniTalk",
     "slug": "uniTalk",
-       "scheme": "unitalk",
+    "scheme": "unitalk",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "",
+    "icon": "./src/assets/uniTalk.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -18,17 +18,23 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "../../assets/uniTalk.png",
+        "foregroundImage": "./src/assets/uniTalk.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.vishnu_choudhary764.uniTalk"
     },
     "web": {
-      "favicon": "../../assets/uniTalk.png"
+      "favicon": "./src/assets/uniTalk.png"
     },
     "plugins": [
       "expo-router"
     ],
-    "permissions": ["CAMERA", "RECORD_AUDIO", "MODIFY_AUDIO_SETTINGS"]
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "162c098e-3610-4def-af0f-8994b8554512"
+      }
+    }
   }
 }

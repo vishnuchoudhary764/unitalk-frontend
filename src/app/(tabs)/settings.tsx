@@ -10,14 +10,17 @@ import {
   ScrollView,
   Animated,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
-import BottomNav from "@/src/components/BottomNav";
 import BASE_URL from "../../config/api";
+
+// Height of floating BottomNav so last item is not hidden
+const NAV_BOTTOM_PADDING = Platform.OS === "ios" ? 100 : 88;
 
 interface User {
   name: string;
@@ -53,40 +56,27 @@ export default function Settings() {
     loadUser();
   }, []);
 
- const loadUser = async () => {
-  try {
-    const storedUser = await AsyncStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+  const loadUser = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem("user");
+      if (storedUser) setUser(JSON.parse(storedUser));
 
-    const token = await AsyncStorage.getItem("token");
-    if (!token) return;
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
 
-    const res = await fetch(`${BASE_URL}/api/auth/profile`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      const res = await fetch(`${BASE_URL}/api/auth/profile`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) { console.log("Profile fetch failed:", data); return; }
+      if (data.user) {
+        setUser(data.user);
+        await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      }
+    } catch (e) { console.log("fetch profile error:", e); }
+  };
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.log("Profile fetch failed:", data);
-      return;
-    }
-
-    if (data.user) {
-      setUser(data.user);
-      await AsyncStorage.setItem("user", JSON.stringify(data.user));
-    }
-
-  } catch (e) {
-    console.log("fetch profile error:", e);
-  }
-};
   const handleChangePhoto = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -106,7 +96,6 @@ export default function Settings() {
       if (result.canceled || !result.assets[0]) return;
 
       const asset = result.assets[0];
-
       setUser((prev) => prev ? { ...prev, profilePic: asset.uri } : prev);
       setUploading(true);
 
@@ -115,10 +104,7 @@ export default function Settings() {
 
       const uploadRes = await fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ image: base64Image }),
       });
 
@@ -135,22 +121,15 @@ export default function Settings() {
 
       const saveRes = await fetch(`${BASE_URL}/api/auth/update-profile`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ profilePic: cloudinaryUrl }),
       });
 
-      if (!saveRes.ok) {
-        Alert.alert("Error", "Photo uploaded but failed to save.");
-        return;
-      }
+      if (!saveRes.ok) { Alert.alert("Error", "Photo uploaded but failed to save."); return; }
 
       const updatedUser = { ...user!, profilePic: cloudinaryUrl };
       setUser(updatedUser);
       await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-
       Alert.alert("Done", "Profile picture updated!");
     } catch (e) {
       console.log("handleChangePhoto error:", e);
@@ -160,131 +139,49 @@ export default function Settings() {
     }
   };
 
-  
-const handleLogout = async () => {
-  try {
-    const token = await AsyncStorage.getItem("token");
-    if (token) {
-      await fetch(`${BASE_URL}/api/auth/logout`, {  
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+  const handleLogout = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (token) {
+        await fetch(`${BASE_URL}/api/auth/logout`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        });
+      }
+    } catch (e) { console.log("Logout API failed (ignored)", e); }
+    finally {
+      await AsyncStorage.removeItem("token");
+      await AsyncStorage.removeItem("user");
+      router.replace("/login");
     }
-  } catch (e) {
-    console.log("Logout API failed (ignored)", e);
-  } finally {
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("user");
-    router.replace("/login");
-  }
-};
- 
-
-  const confirmLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: handleLogout },
-    ]);
   };
 
   const accountSettings: SettingItem[] = [
-    {
-      icon: "person-outline",
-      iconColor: "#667EEA",
-      bgColor: "#EEF2FF",
-      label: "Edit Profile",
-      onPress: () => router.push("/(tabs)/edit-profile"),
-    },
-    {
-      icon: "notifications-outline",
-      iconColor: "#F59E0B",
-      bgColor: "#FEF3C7",
-      label: "Notifications",
-      onPress: () => {},
-    },
-    {
-      icon: "shield-checkmark-outline",
-      iconColor: "#10B981",
-      bgColor: "#D1FAE5",
-      label: "Privacy & Safety",
-      onPress: () => {},
-    },
-    {
-      icon: "lock-closed-outline",
-      iconColor: "#8B5CF6",
-      bgColor: "#F3E8FF",
-      label: "Security",
-      onPress: () => {},
-    },
+    { icon: "person-outline", iconColor: "#667EEA", bgColor: "#EEF2FF", label: "Edit Profile", onPress: () => router.push("/(tabs)/edit-profile") },
+    { icon: "notifications-outline", iconColor: "#F59E0B", bgColor: "#FEF3C7", label: "Notifications", onPress: () => {} },
+    { icon: "shield-checkmark-outline", iconColor: "#10B981", bgColor: "#D1FAE5", label: "Privacy & Safety", onPress: () => {} },
+    { icon: "lock-closed-outline", iconColor: "#8B5CF6", bgColor: "#F3E8FF", label: "Security", onPress: () => {} },
   ];
 
   const preferencesSettings: SettingItem[] = [
-    {
-      icon: "moon-outline",
-      iconColor: "#6366F1",
-      bgColor: "#EEF2FF",
-      label: "Appearance",
-      value: "Light",
-      onPress: () => {},
-    },
-    {
-      icon: "globe-outline",
-      iconColor: "#0EA5E9",
-      bgColor: "#E0F2FE",
-      label: "Language",
-      value: "English",
-      onPress: () => {},
-    },
-    {
-      icon: "volume-high-outline",
-      iconColor: "#EC4899",
-      bgColor: "#FCE7F3",
-      label: "Sound & Vibration",
-      onPress: () => {},
-    },
+    { icon: "moon-outline", iconColor: "#6366F1", bgColor: "#EEF2FF", label: "Appearance", value: "Light", onPress: () => {} },
+    { icon: "globe-outline", iconColor: "#0EA5E9", bgColor: "#E0F2FE", label: "Language", value: "English", onPress: () => {} },
+    { icon: "volume-high-outline", iconColor: "#EC4899", bgColor: "#FCE7F3", label: "Sound & Vibration", onPress: () => {} },
   ];
 
   const supportSettings: SettingItem[] = [
-    {
-      icon: "help-circle-outline",
-      iconColor: "#F59E0B",
-      bgColor: "#FEF3C7",
-      label: "Help & Support",
-      onPress: () => {},
-    },
-    {
-      icon: "chatbox-ellipses-outline",
-      iconColor: "#10B981",
-      bgColor: "#D1FAE5",
-      label: "Give Feedback",
-      onPress: () => {},
-    },
-    {
-      icon: "information-circle-outline",
-      iconColor: "#6B7280",
-      bgColor: "#F3F4F6",
-      label: "About UniTalk",
-      value: "v1.0.0",
-     onPress: () => router.push("/(tabs)/about"),
-    },
+    { icon: "help-circle-outline", iconColor: "#F59E0B", bgColor: "#FEF3C7", label: "Help & Support", onPress: () => {} },
+    { icon: "chatbox-ellipses-outline", iconColor: "#10B981", bgColor: "#D1FAE5", label: "Give Feedback", onPress: () => {} },
+    { icon: "information-circle-outline", iconColor: "#6B7280", bgColor: "#F3F4F6", label: "About UniTalk", value: "v1.0.0", onPress: () => router.push("/(tabs)/about") },
   ];
 
   const renderSettingRow = (item: SettingItem, index: number, isLast: boolean) => (
     <View key={item.label}>
-      <TouchableOpacity
-        style={styles.settingRow}
-        onPress={item.onPress}
-        activeOpacity={0.6}
-      >
+      <TouchableOpacity style={styles.settingRow} onPress={item.onPress} activeOpacity={0.6}>
         <View style={[styles.settingIcon, { backgroundColor: item.bgColor }]}>
           <Ionicons name={item.icon as any} size={20} color={item.iconColor} />
         </View>
-        <Text style={[styles.settingLabel, item.danger && styles.settingLabelDanger]}>
-          {item.label}
-        </Text>
+        <Text style={[styles.settingLabel, item.danger && styles.settingLabelDanger]}>{item.label}</Text>
         <View style={styles.settingRight}>
           {item.value && <Text style={styles.settingValue}>{item.value}</Text>}
           <Ionicons name="chevron-forward" size={18} color="#CBD5E0" />
@@ -308,21 +205,18 @@ const handleLogout = async () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={["#F8F9FA", "#E9ECEF", "#F1F3F5"]}
-        style={StyleSheet.absoluteFill}
-      />
+      <LinearGradient colors={["#F8F9FA", "#E9ECEF", "#F1F3F5"]} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#1F2937" />
         </TouchableOpacity>
-       
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        // ✅ paddingBottom clears the floating BottomNav
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: NAV_BOTTOM_PADDING }]}
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
@@ -342,9 +236,7 @@ const handleLogout = async () => {
                     <Image source={{ uri: user.profilePic }} style={styles.avatar} />
                   ) : (
                     <View style={styles.avatarFallback}>
-                      <Text style={styles.avatarInitial}>
-                        {user.name.charAt(0).toUpperCase()}
-                      </Text>
+                      <Text style={styles.avatarInitial}>{user.name.charAt(0).toUpperCase()}</Text>
                     </View>
                   )}
 
@@ -390,36 +282,26 @@ const handleLogout = async () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
             <View style={styles.sectionCard}>
-              {accountSettings.map((item, i) =>
-                renderSettingRow(item, i, i === accountSettings.length - 1)
-              )}
+              {accountSettings.map((item, i) => renderSettingRow(item, i, i === accountSettings.length - 1))}
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Preferences</Text>
             <View style={styles.sectionCard}>
-              {preferencesSettings.map((item, i) =>
-                renderSettingRow(item, i, i === preferencesSettings.length - 1)
-              )}
+              {preferencesSettings.map((item, i) => renderSettingRow(item, i, i === preferencesSettings.length - 1))}
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Support</Text>
             <View style={styles.sectionCard}>
-              {supportSettings.map((item, i) =>
-                renderSettingRow(item, i, i === supportSettings.length - 1)
-              )}
+              {supportSettings.map((item, i) => renderSettingRow(item, i, i === supportSettings.length - 1))}
             </View>
           </View>
 
           <View style={styles.section}>
-            <TouchableOpacity
-              style={styles.logoutButton}
-              onPress={handleLogout}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
               <View style={styles.logoutContent}>
                 <View style={[styles.settingIcon, { backgroundColor: "#FEF2F2" }]}>
                   <Ionicons name="log-out-outline" size={20} color="#EF4444" />
@@ -431,11 +313,8 @@ const handleLogout = async () => {
           </View>
 
           <Text style={styles.versionText}>UniTalk v1.0.0 • Made with ❤️</Text>
-          <View style={{ height: 100 }} />
         </Animated.View>
       </ScrollView>
-
-      <BottomNav />
     </SafeAreaView>
   );
 }
@@ -453,73 +332,56 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
     justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
-  headerTitle: { fontSize: 22, fontWeight: "800", color: "#1F2937", letterSpacing: -0.5 },
 
   scrollContent: { paddingHorizontal: 20 },
 
   profileCard: {
     borderRadius: 24, overflow: "hidden", marginBottom: 28,
-    shadowColor: "#667EEA", shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2, shadowRadius: 16, elevation: 8,
+    shadowColor: "#667EEA", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 16, elevation: 8,
   },
   profileGradient: { padding: 24, position: "relative" },
   orb: { position: "absolute", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)" },
   profileContent: { flexDirection: "row", alignItems: "center", gap: 18, zIndex: 1 },
-
   avatarWrapper: { position: "relative" },
   avatar: { width: 80, height: 80, borderRadius: 40, borderWidth: 3, borderColor: "rgba(255,255,255,0.4)" },
   avatarFallback: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.2)", justifyContent: "center", alignItems: "center",
-    borderWidth: 3, borderColor: "rgba(255,255,255,0.4)",
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center", alignItems: "center", borderWidth: 3, borderColor: "rgba(255,255,255,0.4)",
   },
   avatarInitial: { fontSize: 32, fontWeight: "800", color: "#FFFFFF" },
-
   editAvatarButton: {
     position: "absolute", bottom: 0, right: 0,
-    width: 28, height: 28, borderRadius: 14,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    justifyContent: "center", alignItems: "center",
-    borderWidth: 2, borderColor: "#FFFFFF",
+    width: 28, height: 28, borderRadius: 14, backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center", alignItems: "center", borderWidth: 2, borderColor: "#FFFFFF",
   },
-
   uploadingBanner: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    marginTop: 12, backgroundColor: "rgba(0,0,0,0.2)",
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 12,
-    alignSelf: "flex-start",
+    flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12,
+    backgroundColor: "rgba(0,0,0,0.2)", paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 12, alignSelf: "flex-start",
   },
   uploadingText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
-
   profileInfo: { flex: 1, gap: 4 },
   profileName: { fontSize: 22, fontWeight: "800", color: "#FFFFFF", letterSpacing: -0.5 },
   profileEmail: { fontSize: 13, color: "rgba(255,255,255,0.8)", fontWeight: "500" },
   profileTagRow: { flexDirection: "row", gap: 8, marginTop: 6 },
   profileTag: {
     flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.15)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20,
   },
   profileTagText: { fontSize: 11, color: "rgba(255,255,255,0.95)", fontWeight: "600" },
 
   section: { marginBottom: 24 },
   sectionTitle: {
     fontSize: 13, fontWeight: "700", color: "#9CA3AF",
-    textTransform: "uppercase", letterSpacing: 0.8,
-    marginBottom: 10, paddingLeft: 4,
+    textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 10, paddingLeft: 4,
   },
   sectionCard: {
     backgroundColor: "#FFFFFF", borderRadius: 20, overflow: "hidden",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
   },
-  settingRow: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 18, paddingVertical: 14, gap: 14,
-  },
+  settingRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 18, paddingVertical: 14, gap: 14 },
   settingIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center" },
   settingLabel: { flex: 1, fontSize: 16, fontWeight: "600", color: "#1F2937" },
   settingLabelDanger: { color: "#EF4444" },
@@ -528,12 +390,10 @@ const styles = StyleSheet.create({
   rowDivider: { height: 1, backgroundColor: "#F9FAFB", marginLeft: 72 },
 
   logoutButton: {
-    backgroundColor: "#FFFFFF", borderRadius: 20,
-    paddingHorizontal: 18, paddingVertical: 14,
+    backgroundColor: "#FFFFFF", borderRadius: 20, paddingHorizontal: 18, paddingVertical: 14,
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     borderWidth: 1.5, borderColor: "#FECACA",
-    shadowColor: "#EF4444", shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08, shadowRadius: 8, elevation: 2,
+    shadowColor: "#EF4444", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2,
   },
   logoutContent: { flexDirection: "row", alignItems: "center", gap: 14 },
   logoutText: { fontSize: 16, fontWeight: "700", color: "#EF4444" },

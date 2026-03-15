@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   View,
@@ -15,7 +16,7 @@ const NAV_ITEMS = [
     route: "/home",
     label: "Home",
     icon: "home",
-    iconOutline: "chatbubbles-outline",
+    iconOutline: "home-outline",
   },
   {
     route: "/requests",
@@ -58,7 +59,7 @@ export default function BottomNav({ requestCount = 0 }: BottomNavProps) {
               <TouchableOpacity
                 key={item.route}
                 style={styles.navItem}
-                onPress={() => router.push(item.route)}
+                onPress={() => router.push(item.route as any)}
                 activeOpacity={0.7}
               >
                 <View style={styles.iconWrapper}>
@@ -86,6 +87,9 @@ export default function BottomNav({ requestCount = 0 }: BottomNavProps) {
     </View>
   );
 }
+
+// NAV_HEIGHT export so screens can use it for paddingBottom
+export const NAV_HEIGHT = Platform.OS === "ios" ? 84 : 72;
 
 const styles = StyleSheet.create({
   container: {
