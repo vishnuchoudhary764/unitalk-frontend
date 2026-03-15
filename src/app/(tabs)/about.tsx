@@ -1,4 +1,3 @@
-// app/about.tsx
 import React, { useEffect, useRef } from "react";
 import {
   View,
@@ -17,9 +16,6 @@ import { LinearGradient } from "expo-linear-gradient";
 
 const { width: W } = Dimensions.get("window");
 
-/* ─────────────────────────────────────────
-   DATA
-───────────────────────────────────────── */
 const FEATURES = [
   {
     icon: "shield-checkmark",
@@ -73,14 +69,12 @@ const STATS = [
 ];
 
 const TEAM = [
-  { name: "Vishnu", role: "Founder & CEO", emoji: "👨‍💻", grad: ["#7C5CFC", "#C084FC"] as [string,string] },
-  { name: "Design", role: "UI/UX", emoji: "🎨", grad: ["#EC4899", "#F472B6"] as [string,string] },
-  { name: "Backend", role: "Engineering", emoji: "⚙️", grad: ["#06B6D4", "#67E8F9"] as [string,string] },
+  { name: "Vishnu", role: "Founder & CEO", emoji: "", grad: ["#7C5CFC", "#C084FC"] as [string,string] },
+  { name: "Design", role: "UI/UX", emoji: "", grad: ["#EC4899", "#F472B6"] as [string,string] },
+  { name: "Backend", role: "Engineering", emoji: "", grad: ["#06B6D4", "#67E8F9"] as [string,string] },
 ];
 
-/* ─────────────────────────────────────────
-   ANIMATED CARD
-───────────────────────────────────────── */
+
 function FadeCard({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: any }) {
   const anim = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(24)).current;
@@ -99,9 +93,6 @@ function FadeCard({ children, delay = 0, style }: { children: React.ReactNode; d
   );
 }
 
-/* ─────────────────────────────────────────
-   MAIN
-───────────────────────────────────────── */
 export default function AboutScreen() {
   const router = useRouter();
 
@@ -117,15 +108,12 @@ export default function AboutScreen() {
 
   return (
     <SafeAreaView style={s.root}>
-      {/* Background */}
       <LinearGradient colors={["#F5F3FF", "#EEF2FF", "#F0FDF4"]} style={StyleSheet.absoluteFill} />
 
-      {/* Decorative blobs */}
       <View style={[s.blob, { top: -60, right: -60, backgroundColor: "#DDD6FE", width: 180, height: 180 }]} />
       <View style={[s.blob, { top: 200, left: -80, backgroundColor: "#BFDBFE", width: 160, height: 160 }]} />
       <View style={[s.blob, { bottom: 100, right: -40, backgroundColor: "#BBF7D0", width: 140, height: 140 }]} />
 
-      {/* Header */}
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.8}>
           <Ionicons name="chevron-back" size={24} color="#1A1035" />
@@ -139,7 +127,6 @@ export default function AboutScreen() {
         contentContainerStyle={s.scroll}
       >
 
-        {/* ── HERO ── */}
         <Animated.View style={[s.hero, { opacity: heroOpacity, transform: [{ scale: heroScale }] }]}>
           <LinearGradient
             colors={["#7C5CFC", "#A855F7", "#EC4899"]}
@@ -147,7 +134,6 @@ export default function AboutScreen() {
             end={{ x: 1, y: 1 }}
             style={s.heroBg}
           >
-            {/* Decorative circles */}
             <View style={[s.heroCircle, { width: 120, height: 120, top: -30, right: -30, opacity: 0.15 }]} />
             <View style={[s.heroCircle, { width: 80, height: 80, bottom: 10, left: -20, opacity: 0.12 }]} />
             <View style={[s.heroCircle, { width: 50, height: 50, top: 40, left: 30, opacity: 0.1 }]} />
@@ -164,7 +150,6 @@ export default function AboutScreen() {
           </LinearGradient>
         </Animated.View>
 
-        {/* ── MISSION ── */}
         <FadeCard delay={100} style={s.section}>
           <View style={s.card}>
             <View style={s.cardHeader}>
@@ -186,7 +171,6 @@ export default function AboutScreen() {
           </View>
         </FadeCard>
 
-        {/* ── STATS ── */}
         <FadeCard delay={180}>
           <LinearGradient
             colors={["#7C5CFC", "#C084FC"]}
@@ -206,7 +190,6 @@ export default function AboutScreen() {
           </LinearGradient>
         </FadeCard>
 
-        {/* ── FEATURES ── */}
         <FadeCard delay={240} style={s.section}>
           <Text style={s.sectionTitle}>Why UniTalk?</Text>
           <View style={s.featuresGrid}>
@@ -222,7 +205,6 @@ export default function AboutScreen() {
           </View>
         </FadeCard>
 
-        {/* ── HOW IT WORKS ── */}
         <FadeCard delay={400} style={s.section}>
           <Text style={s.sectionTitle}>How It Works</Text>
           <View style={s.card}>
@@ -249,7 +231,6 @@ export default function AboutScreen() {
           </View>
         </FadeCard>
 
-        {/* ── TEAM ── */}
         <FadeCard delay={500} style={s.section}>
           <Text style={s.sectionTitle}>The Team</Text>
           <View style={s.teamRow}>
@@ -265,7 +246,6 @@ export default function AboutScreen() {
           </View>
         </FadeCard>
 
-        {/* ── CONTACT / LINKS ── */}
         <FadeCard delay={620} style={s.section}>
           <Text style={s.sectionTitle}>Connect With Us</Text>
           <View style={s.linksCol}>
@@ -287,7 +267,6 @@ export default function AboutScreen() {
           </View>
         </FadeCard>
 
-        {/* ── FOOTER ── */}
         <FadeCard delay={700}>
           <View style={s.footer}>
             <LinearGradient colors={["#7C5CFC", "#A855F7"]} style={s.footerLogo}>
@@ -305,9 +284,7 @@ export default function AboutScreen() {
   );
 }
 
-/* ─────────────────────────────────────────
-   STYLES
-───────────────────────────────────────── */
+
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#F5F3FF" },
 
@@ -317,7 +294,6 @@ const s = StyleSheet.create({
     opacity: 0.45,
   },
 
-  /* HEADER */
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -347,7 +323,6 @@ const s = StyleSheet.create({
 
   scroll: { paddingHorizontal: 16, paddingTop: 4 },
 
-  /* HERO */
   hero: {
     borderRadius: 28,
     overflow: "hidden",
@@ -415,7 +390,6 @@ const s = StyleSheet.create({
   heroBadgeDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#4ADE80" },
   heroBadgeText: { fontSize: 12, color: "#FFFFFF", fontWeight: "600" },
 
-  /* SECTION */
   section: { marginBottom: 20 },
   sectionTitle: {
     fontSize: 20,
@@ -425,7 +399,6 @@ const s = StyleSheet.create({
     letterSpacing: -0.3,
   },
 
-  /* CARD */
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
@@ -465,7 +438,6 @@ const s = StyleSheet.create({
     fontWeight: "700",
   },
 
-  /* STATS */
   statsCard: {
     flexDirection: "row",
     borderRadius: 20,
@@ -485,7 +457,6 @@ const s = StyleSheet.create({
   statLabel: { fontSize: 11, color: "rgba(255,255,255,0.75)", fontWeight: "600", marginTop: 3, textTransform: "uppercase", letterSpacing: 0.5 },
   statDivider: { width: 1, height: 34, backgroundColor: "rgba(255,255,255,0.25)" },
 
-  /* FEATURES GRID */
   featuresGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -522,7 +493,6 @@ const s = StyleSheet.create({
     lineHeight: 17,
   },
 
-  /* HOW IT WORKS */
   stepRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -553,7 +523,6 @@ const s = StyleSheet.create({
   },
   stepText: { fontSize: 14, color: "#374151", fontWeight: "500", flex: 1, lineHeight: 20 },
 
-  /* TEAM */
   teamRow: {
     flexDirection: "row",
     gap: 12,
@@ -582,7 +551,6 @@ const s = StyleSheet.create({
   teamName: { fontSize: 14, fontWeight: "700", color: "#1A1035", marginBottom: 3 },
   teamRole: { fontSize: 11, color: "#9B8EC4", fontWeight: "500" },
 
-  /* LINKS */
   linksCol: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
@@ -611,7 +579,6 @@ const s = StyleSheet.create({
   },
   linkLabel: { flex: 1, fontSize: 14, fontWeight: "600", color: "#1A1035" },
 
-  /* FOOTER */
   footer: {
     alignItems: "center",
     paddingVertical: 28,

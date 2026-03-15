@@ -1,4 +1,3 @@
-// app/requests.tsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -109,7 +108,6 @@ export default function Requests() {
         }}
       >
         <View style={styles.card}>
-          {/* Avatar + Info */}
           <View style={styles.cardTop}>
             <View style={styles.avatarWrapper}>
               <LinearGradient
@@ -142,10 +140,8 @@ export default function Requests() {
             </TouchableOpacity>
           </View>
 
-          {/* Divider */}
           <View style={styles.divider} />
 
-          {/* Actions */}
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.rejectButton, isProcessing && styles.buttonDisabled]}
@@ -181,13 +177,11 @@ export default function Requests() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Background */}
       <LinearGradient
         colors={["#F8F9FA", "#E9ECEF", "#F1F3F5"]}
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -210,7 +204,6 @@ export default function Requests() {
         </TouchableOpacity>
       </View>
 
-      {/* Summary Bar */}
       {!loading && requests.length > 0 && (
         <Animated.View style={{ opacity: fadeAnim, paddingHorizontal: 20, marginBottom: 16 }}>
           <View style={styles.summaryBar}>
@@ -268,7 +261,6 @@ export default function Requests() {
         }
       />
 
-      {/* Bottom Nav */}
       <BottomNav requestCount={requests.length} />
     </SafeAreaView>
   );
@@ -280,7 +272,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FA",
   },
 
-  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -344,7 +335,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  // Summary bar
   summaryBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -380,14 +370,12 @@ const styles = StyleSheet.create({
     color: "#667EEA",
   },
 
-  // List
   listContent: {
     paddingHorizontal: 20,
     paddingBottom: 120,
     flexGrow: 1,
   },
 
-  // Card
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 20,
@@ -543,7 +531,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  // Empty state
   emptyState: {
     flex: 1,
     alignItems: "center",

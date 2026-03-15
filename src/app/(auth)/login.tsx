@@ -41,7 +41,7 @@ export default function LoginScreen() {
 
       const data = await res.json();
 
-      // ❌ pehle check karo
+     
       if (!res.ok) {
         Alert.alert(
           "Login failed",
@@ -50,7 +50,7 @@ export default function LoginScreen() {
         return;
       }
 
-      // ✅ success case
+      
       await AsyncStorage.setItem("token", data.token);
       await AsyncStorage.setItem(
         "user",
@@ -64,7 +64,7 @@ export default function LoginScreen() {
       );
       Alert.alert("Success", "Logged in successfully");
 
-      // ✅ redirect ONLY here
+      
       router.replace("/(tabs)/home");
 
     } catch (err) {
@@ -80,7 +80,7 @@ export default function LoginScreen() {
       style={styles.container}
     >
       <View>
-        {/* Title */}
+       
         <Image
           source={logo}
           resizeMode="contain"
@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
   logo: {
     width: 190,
     height: 190,
-    alignSelf: "center",   // ✅ horizontal center
-    // marginBottom: 24,
+    alignSelf: "center",   
+   
   },
 
   title: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#0F172A",
     marginBottom: 4,
-    alignSelf: "center",          // ✅ horizontal center
+    alignSelf: "center",          
 
   },
 

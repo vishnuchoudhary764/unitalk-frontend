@@ -1,4 +1,3 @@
-// app/(tabs)/edit-profile.tsx
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -23,13 +22,11 @@ import BASE_URL from "../../config/api";
 export default function EditProfileScreen() {
   const router = useRouter();
 
-  // ── Profile data ────────────────────────────────────────────────────────────
   const [originalName, setOriginalName] = useState("");
   const [name, setName] = useState("");
   const [profilePicUrl, setProfilePicUrl] = useState("");
   const [localImageUri, setLocalImageUri] = useState("");
 
-  // ── Password ────────────────────────────────────────────────────────────────
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -37,13 +34,11 @@ export default function EditProfileScreen() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // ── Loading states per section ───────────────────────────────────────────────
   const [pageLoading, setPageLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
 
-  // ─── Load profile on mount ───────────────────────────────────────────────────
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -67,7 +62,6 @@ export default function EditProfileScreen() {
     fetchProfile();
   }, []);
 
-  // ─── Pick & auto-upload profile picture ─────────────────────────────────────
   const pickImage = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -87,13 +81,12 @@ export default function EditProfileScreen() {
       if (result.canceled || !result.assets[0]) return;
 
       const asset = result.assets[0];
-      setLocalImageUri(asset.uri); // instant preview
+      setLocalImageUri(asset.uri); 
 
       setUploading(true);
       const base64Image = `data:image/jpeg;base64,${asset.base64}`;
       const token = await AsyncStorage.getItem("token");
 
-      // Upload to Cloudinary
       const uploadRes = await fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
         method: "POST",
         headers: {
@@ -107,14 +100,14 @@ export default function EditProfileScreen() {
 
       if (!uploadRes.ok) {
         Alert.alert("Upload failed", uploadData.message || "Could not upload image");
-        setLocalImageUri(profilePicUrl); // revert preview
+        setLocalImageUri(profilePicUrl); 
         return;
       }
 
       const newUrl = uploadData.url;
       setProfilePicUrl(newUrl);
 
-      // ✅ Auto-save profile pic immediately after upload
+      
       const saveRes = await fetch(`${BASE_URL}/api/auth/update-profile`, {
         method: "PUT",
         headers: {
@@ -125,7 +118,7 @@ export default function EditProfileScreen() {
       });
 
       if (saveRes.ok) {
-        Alert.alert("✅ Done", "Profile picture updated!");
+        Alert.alert("Done", "Profile picture updated!");
       } else {
         Alert.alert("Error", "Picture uploaded but failed to save.");
       }
@@ -136,7 +129,6 @@ export default function EditProfileScreen() {
     }
   };
 
-  // ─── Save name ────────────────────────────────────────────────────────────────
   const saveName = async () => {
     if (name.trim().length < 2) {
       Alert.alert("Invalid", "Name must be at least 2 characters.");
@@ -167,7 +159,7 @@ export default function EditProfileScreen() {
       }
 
       setOriginalName(name.trim());
-      Alert.alert("✅ Done", "Name updated successfully!");
+      Alert.alert(" Done", "Name updated successfully!");
     } catch (e) {
       Alert.alert("Error", "Server not reachable");
     } finally {
@@ -175,7 +167,6 @@ export default function EditProfileScreen() {
     }
   };
 
-  // ─── Save password ────────────────────────────────────────────────────────────
   const savePassword = async () => {
     if (!currentPassword) {
       Alert.alert("Required", "Enter your current password.");
@@ -212,7 +203,7 @@ export default function EditProfileScreen() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      Alert.alert("✅ Done", "Password updated successfully!");
+      Alert.alert("Done", "Password updated successfully!");
     } catch (e) {
       Alert.alert("Error", "Server not reachable");
     } finally {
@@ -235,7 +226,6 @@ export default function EditProfileScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#1F2937" />
@@ -250,7 +240,6 @@ export default function EditProfileScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── Profile Picture Section ── */}
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <View style={styles.cardIconWrapper}>
@@ -260,7 +249,6 @@ export default function EditProfileScreen() {
           </View>
 
           <View style={styles.picRow}>
-            {/* Avatar */}
             <View style={styles.avatarWrapper}>
               {localImageUri ? (
                 <Image source={{ uri: localImageUri }} style={styles.avatar} />
@@ -279,7 +267,6 @@ export default function EditProfileScreen() {
               )}
             </View>
 
-            {/* Change button */}
             <View style={styles.picInfo}>
               <Text style={styles.picHint}>
                 {uploading
@@ -305,7 +292,6 @@ export default function EditProfileScreen() {
           </View>
         </View>
 
-        {/* ── Name Section ── */}
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <View style={styles.cardIconWrapper}>
@@ -352,7 +338,6 @@ export default function EditProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ── Password Section ── */}
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <View style={styles.cardIconWrapper}>
@@ -361,7 +346,6 @@ export default function EditProfileScreen() {
             <Text style={styles.cardTitle}>Change Password</Text>
           </View>
 
-          {/* Current */}
           <View style={styles.fieldWrapper}>
             <Text style={styles.label}>Current Password</Text>
             <View style={styles.inputRow}>
@@ -384,7 +368,6 @@ export default function EditProfileScreen() {
             </View>
           </View>
 
-          {/* New */}
           <View style={styles.fieldWrapper}>
             <Text style={styles.label}>New Password</Text>
             <View style={styles.inputRow}>
@@ -407,7 +390,6 @@ export default function EditProfileScreen() {
             </View>
           </View>
 
-          {/* Confirm */}
           <View style={styles.fieldWrapper}>
             <Text style={styles.label}>Confirm New Password</Text>
             <View style={[
@@ -471,7 +453,6 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F8F9FA" },
 
-  // Header
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
@@ -487,7 +468,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 20, paddingTop: 8 },
 
-  // Card
   card: {
     backgroundColor: "#FFFFFF", borderRadius: 20, padding: 20, marginBottom: 16,
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
@@ -500,7 +480,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontSize: 16, fontWeight: "700", color: "#1F2937" },
 
-  // Profile pic row
   picRow: { flexDirection: "row", alignItems: "center", gap: 20 },
   avatarWrapper: { position: "relative", width: 90, height: 90 },
   avatar: { width: 90, height: 90, borderRadius: 45, backgroundColor: "#F1F5F9" },
@@ -519,7 +498,6 @@ const styles = StyleSheet.create({
   picButtonDisabled: { opacity: 0.5 },
   picButtonText: { fontSize: 14, fontWeight: "600", color: "#667EEA" },
 
-  // Fields
   fieldWrapper: { marginBottom: 14 },
   label: { fontSize: 13, fontWeight: "600", color: "#6B7280", marginBottom: 8, marginLeft: 2 },
   inputRow: {
@@ -535,7 +513,6 @@ const styles = StyleSheet.create({
   eyeBtn: { padding: 4 },
   errorText: { fontSize: 12, color: "#EF4444", marginTop: 4, marginLeft: 2 },
 
-  // Section save button
   sectionSaveButton: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 8, backgroundColor: "#667EEA",

@@ -40,10 +40,10 @@ export default function EmailScreen() {
         alert( "OTP sent successfully");
       }
 
-      // ✅ OTP sent successfully
+     
       router.push({
         pathname: "/otp",
-        params: { email }, // pass email to otp screen
+        params: { email }, 
       });
 
     } catch{
@@ -58,14 +58,14 @@ export default function EmailScreen() {
       style={styles.container}
     >
       <View>
-        {/* Title */}
+       
         <Image
           source={logo}
           resizeMode="contain"
           style={styles.logo}
         />
 
-        {/* Input */}
+      
         <Text style={styles.label}>Email address</Text>
         <TextInput
           placeholder="example@rtu.ac.in"
@@ -82,7 +82,7 @@ export default function EmailScreen() {
           We’ll send a one-time verification code to this email
         </Text>
 
-        {/* Button */}
+       
         <TouchableOpacity
           activeOpacity={0.85}
           disabled={!isValidEmail}
@@ -118,8 +118,8 @@ const styles = StyleSheet.create({
   logo: {
     width: 190,
     height: 190,
-    alignSelf: "center",   // ✅ horizontal center
-    // marginBottom: 24,
+    alignSelf: "center",  
+   
   },
 
 
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     marginTop: -10,
     marginBottom: 8,
-    marginLeft: 8,   // ✅ left spacing
+    marginLeft: 8,   
   },
 
 

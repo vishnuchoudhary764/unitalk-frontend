@@ -1,4 +1,3 @@
-// components/BottomNav.tsx
 import React from "react";
 import {
   View,

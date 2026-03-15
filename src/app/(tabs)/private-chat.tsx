@@ -1,6 +1,3 @@
-
-
-// app/private-chat.tsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
@@ -34,9 +31,6 @@ import BASE_URL from "@/src/config/api";
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 const BUBBLE_R = 18;
 
-/* ─────────────────────────────────────────
-   TYPES
-───────────────────────────────────────── */
 interface PrivateMessage {
   _id?: string;
   message?: string;
@@ -55,9 +49,6 @@ interface Friend {
   profilePic?: string;
 }
 
-/* ─────────────────────────────────────────
-   ANIMATED TYPING DOTS
-───────────────────────────────────────── */
 function TypingDots() {
   const d1 = useRef(new Animated.Value(0)).current;
   const d2 = useRef(new Animated.Value(0)).current;
@@ -89,9 +80,6 @@ function TypingDots() {
   );
 }
 
-/* ─────────────────────────────────────────
-   FULL-SCREEN IMAGE VIEWER
-───────────────────────────────────────── */
 function ImageViewer({ uri, visible, onClose }: { uri: string; visible: boolean; onClose: () => void }) {
   const scale = useRef(new Animated.Value(0.88)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -127,11 +115,8 @@ function ImageViewer({ uri, visible, onClose }: { uri: string; visible: boolean;
   );
 }
 
-/* ─────────────────────────────────────────
-   TICK  ✓ sent  ✓✓ delivered  ✓✓🔵 read
-───────────────────────────────────────── */
+
 function Tick({ status }: { status?: "sent" | "delivered" | "read" }) {
-  // seen = blue double tick
   if (status === "read") {
     return (
       <View style={s.tickRow}>
@@ -140,7 +125,6 @@ function Tick({ status }: { status?: "sent" | "delivered" | "read" }) {
       </View>
     );
   }
-  // delivered = white/gray double tick
   if (status === "delivered") {
     return (
       <View style={s.tickRow}>
@@ -149,13 +133,9 @@ function Tick({ status }: { status?: "sent" | "delivered" | "read" }) {
       </View>
     );
   }
-  // sent = single gray tick
   return <Ionicons name="checkmark" size={13} color="rgba(255,255,255,0.45)" />;
 }
 
-/* ─────────────────────────────────────────
-   MAIN COMPONENT
-───────────────────────────────────────── */
 export default function PrivateChat() {
   const { friendId } = useLocalSearchParams<{ friendId: string }>();
   const router = useRouter();
@@ -179,7 +159,6 @@ export default function PrivateChat() {
   const listOpacity = useRef(new Animated.Value(0)).current;
   const kbHeight = useRef(new Animated.Value(0)).current;
 
-  /* ── entrance ── */
   useEffect(() => {
     Animated.parallel([
       Animated.spring(headerY, { toValue: 0, tension: 55, friction: 9, useNativeDriver: true }),
@@ -197,7 +176,6 @@ export default function PrivateChat() {
     return () => { show.remove(); hide.remove(); };
   }, []);
 
-  /* ── init data + socket ── */
   useEffect(() => {
     const init = async () => {
       const token = await AsyncStorage.getItem("token");
@@ -217,20 +195,17 @@ export default function PrivateChat() {
 
       socket.on("connect", () => {
         socket.emit("join-private-chat", { friendId });
-        // Mark all existing unread messages from friend as seen
         socket.emit("message-seen", { friendId });
       });
 
       socket.on("new-private-message", (msg: PrivateMessage) => {
         setMessages((p) => [...p, msg]);
         setIsTyping(false);
-        // If the message is FROM the friend (i.e. we are the receiver), mark it as seen
         if (msg.sender === friendId) {
           socket.emit("message-seen", { friendId, messageId: msg._id });
         }
       });
 
-      // Friend has seen our messages → update all our sent messages to "read"
       socket.on("messages-read", ({ by }: { by: string }) => {
         if (by === friendId) {
           setMessages((prev) =>
@@ -258,7 +233,6 @@ export default function PrivateChat() {
     return () => { socketRef.current?.disconnect(); };
   }, [friendId]);
 
-  /* ── auto scroll ── */
   useEffect(() => {
     if (messages.length) setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 120);
   }, [messages]);
@@ -270,7 +244,6 @@ export default function PrivateChat() {
     return () => sub.remove();
   }, []);
 
-  /* ── send text ── */
   const sendMessage = useCallback(() => {
     if (!text.trim() || !socketRef.current || !friendId) return;
     socketRef.current.emit("send-private-message", {
@@ -282,7 +255,6 @@ export default function PrivateChat() {
     setReplyingTo(null);
   }, [text, friendId, replyingTo]);
 
-  /* ── send image ── */
   const handleImagePicker = async () => {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -332,9 +304,7 @@ export default function PrivateChat() {
     socketRef.current?.emit("typing", { friendId });
   };
 
-  /* ─────────────────────────────────────────
-     RENDER MESSAGE
-  ───────────────────────────────────────── */
+  
   const renderMessage = useCallback(
     ({ item, index }: { item: PrivateMessage; index: number }) => {
       const isMe = item.sender !== friendId;
@@ -361,7 +331,6 @@ export default function PrivateChat() {
         return dt.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
       };
 
-      // bubble shape helpers
       const myTL = BUBBLE_R, myTR = firstInGroup ? BUBBLE_R : 6, myBL = BUBBLE_R, myBR = lastInGroup ? 4 : 6;
       const thTL = firstInGroup ? BUBBLE_R : 6, thTR = BUBBLE_R, thBL = lastInGroup ? 4 : 6, thBR = BUBBLE_R;
 
@@ -376,7 +345,6 @@ export default function PrivateChat() {
           )}
 
           <View style={[s.msgRow, isMe ? s.msgRowMe : s.msgRowThem, !lastInGroup && { marginBottom: 2 }]}>
-            {/* Avatar placeholder for friend */}
             {!isMe && (
               <View style={s.avatarSlot}>
                 {lastInGroup &&
@@ -390,7 +358,6 @@ export default function PrivateChat() {
               </View>
             )}
 
-            {/* Bubble */}
             <TouchableOpacity
               activeOpacity={0.88}
               onLongPress={() => setSelected(item._id || null)}
@@ -409,7 +376,6 @@ export default function PrivateChat() {
                 },
               ]}
             >
-              {/* For image messages: render bare (no gradient, no bg) */}
               {isImg ? (
                 <BubbleContent
                   item={item}
@@ -420,7 +386,6 @@ export default function PrivateChat() {
                   friendId={friendId as string}
                 />
               ) : isMe ? (
-                /* Gradient wrapper only for text "me" bubbles */
                 <LinearGradient
                   colors={["#7C5CFC", "#C084FC"]}
                   start={{ x: 0, y: 0 }}
@@ -437,7 +402,6 @@ export default function PrivateChat() {
                   />
                 </LinearGradient>
               ) : (
-                /* White bg only for text "them" bubbles */
                 <View style={s.bubbleThemInner}>
                   <BubbleContent
                     item={item}
@@ -452,7 +416,6 @@ export default function PrivateChat() {
             </TouchableOpacity>
           </View>
 
-          {/* Context menu */}
           {selected === item._id && (
             <View style={[s.ctxMenu, isMe ? s.ctxMenuMe : s.ctxMenuThem]}>
               <TouchableOpacity
@@ -492,9 +455,7 @@ export default function PrivateChat() {
     [messages, friendId, friendName, profilePic, selected]
   );
 
-  /* ─────────────────────────────────────────
-     RENDER
-  ───────────────────────────────────────── */
+
   return (
     <SafeAreaView style={s.root}>
       <StatusBar barStyle="dark-content" backgroundColor="#FAFAFE" />
@@ -502,7 +463,6 @@ export default function PrivateChat() {
       <KeyboardAvoidingView style={s.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[s.flex, Platform.OS === "android" && { marginBottom: kbHeight }]}>
 
-          {/* ── HEADER ── */}
           <Animated.View style={[s.header, { transform: [{ translateY: headerY }] }]}>
             <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
               <Ionicons name="chevron-back" size={26} color="#1A1035" />
@@ -537,7 +497,6 @@ export default function PrivateChat() {
             </View>
           </Animated.View>
 
-          {/* ── MESSAGES ── */}
           <Animated.View style={[s.flex, { opacity: listOpacity }]}>
             <FlatList
               ref={listRef}
@@ -560,7 +519,6 @@ export default function PrivateChat() {
             />
           </Animated.View>
 
-          {/* ── TYPING INDICATOR ── */}
           {isTyping && (
             <View style={s.typingRow}>
               {profilePic ? (
@@ -574,7 +532,6 @@ export default function PrivateChat() {
             </View>
           )}
 
-          {/* ── REPLY BAR ── */}
           {replyingTo && (
             <View style={s.replyBar}>
               <View style={s.replyBarAccent} />
@@ -595,7 +552,6 @@ export default function PrivateChat() {
             </View>
           )}
 
-          {/* ── INPUT BAR ── */}
           <BlurView intensity={95} tint="light" style={s.inputBar}>
             <TouchableOpacity style={s.sideBtn} onPress={handleImagePicker} disabled={sendingImg}>
               {sendingImg
@@ -638,9 +594,6 @@ export default function PrivateChat() {
   );
 }
 
-/* ─────────────────────────────────────────
-   BUBBLE CONTENT (shared for me/them)
-───────────────────────────────────────── */
 function BubbleContent({
   item, isMe, isImg, fmtTime, friendName, friendId,
 }: {
@@ -653,7 +606,6 @@ function BubbleContent({
 }) {
   return (
     <>
-      {/* Reply snippet */}
       {item.replyTo && (
         <View style={[s.replySnip, !isMe && s.replySnipThem]}>
           <View style={[s.replySnipBar, !isMe && s.replySnipBarThem]} />
@@ -668,7 +620,6 @@ function BubbleContent({
         </View>
       )}
 
-      {/* Image */}
       {isImg && item.image ? (
         <View>
           <Image source={{ uri: item.image }} style={s.msgImg} resizeMode="cover" />
@@ -678,7 +629,6 @@ function BubbleContent({
           </View>
         </View>
       ) : (
-        /* Text */
         <View style={s.textContent}>
           <Text style={[s.msgTxt, isMe ? s.msgTxtMe : s.msgTxtThem]}>
             {item.message}
@@ -696,9 +646,7 @@ function BubbleContent({
   );
 }
 
-/* ─────────────────────────────────────────
-   STYLES
-───────────────────────────────────────── */
+
 const s = StyleSheet.create({
   flex: { flex: 1 },
 
@@ -707,7 +655,6 @@ const s = StyleSheet.create({
     backgroundColor: "#FAFAFE",
   },
 
-  /* HEADER */
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -735,15 +682,12 @@ const s = StyleSheet.create({
   hActions: { flexDirection: "row", gap: 4 },
   hBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F5F3FF", justifyContent: "center", alignItems: "center" },
 
-  /* LIST */
   list: { flexGrow: 1, paddingHorizontal: 12, paddingTop: 14, paddingBottom: 6 },
 
-  /* DATE SEPARATOR */
   dateSepRow: { flexDirection: "row", alignItems: "center", marginVertical: 18, gap: 10 },
   dateSepLine: { flex: 1, height: 1, backgroundColor: "#E5E0FF" },
   dateSepText: { fontSize: 11, fontWeight: "600", color: "#A89DD0", letterSpacing: 0.6, textTransform: "uppercase" },
 
-  /* MESSAGE ROW */
   msgRow: { flexDirection: "row", marginVertical: 2, alignItems: "flex-end" },
   msgRowMe: { justifyContent: "flex-end", paddingLeft: 52 },
   msgRowThem: { justifyContent: "flex-start", paddingRight: 52 },
@@ -752,7 +696,6 @@ const s = StyleSheet.create({
   miniAvatar: { width: 30, height: 30, borderRadius: 15, justifyContent: "center", alignItems: "center" },
   miniAvatarLetter: { fontSize: 12, fontWeight: "700", color: "#FFF" },
 
-  /* BUBBLE */
   bubble: { maxWidth: SCREEN_W * 0.74, overflow: "hidden" },
   bubbleImg: { backgroundColor: "transparent" },
 
@@ -769,13 +712,11 @@ const s = StyleSheet.create({
     elevation: 2,
   },
 
-  /* TEXT INSIDE BUBBLE */
   textContent: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end" },
   msgTxt: { fontSize: 15, lineHeight: 21, flexShrink: 1, flexGrow: 1 },
   msgTxtMe: { color: "#FFFFFF" },
   msgTxtThem: { color: "#1A1035" },
 
-  /* META (time + tick) */
   metaRow: { flexDirection: "row", alignItems: "center", gap: 3, marginLeft: 4, marginBottom: 1, flexShrink: 0 },
   metaRowMe: {},
   metaRowThem: {},
@@ -785,7 +726,6 @@ const s = StyleSheet.create({
 
   tickRow: { flexDirection: "row", alignItems: "center" },
 
-  /* IMAGE INSIDE BUBBLE */
   msgImg: { width: SCREEN_W * 0.38, height: SCREEN_W * 0.38, borderRadius: BUBBLE_R - 2 },
   imgMeta: {
     position: "absolute", bottom: 8, right: 10,
@@ -795,7 +735,6 @@ const s = StyleSheet.create({
   },
   imgMetaTime: { fontSize: 10, color: "#FFF", fontWeight: "500" },
 
-  /* REPLY SNIPPET INSIDE BUBBLE */
   replySnip: {
     flexDirection: "row", gap: 8,
     backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 10,
@@ -810,7 +749,6 @@ const s = StyleSheet.create({
   replySnipMsg: { fontSize: 12, color: "rgba(255,255,255,0.65)" },
   replySnipMsgThem: { color: "#9B8EC4" },
 
-  /* CONTEXT MENU */
   ctxMenu: {
     flexDirection: "row", backgroundColor: "#FFF", borderRadius: 14,
     paddingHorizontal: 14, paddingVertical: 10, gap: 18, marginVertical: 4,
@@ -822,13 +760,11 @@ const s = StyleSheet.create({
   ctxItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   ctxText: { fontSize: 13, fontWeight: "600", color: "#7C5CFC" },
 
-  /* EMPTY */
   emptyWrap: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   emptyIcon: { width: 84, height: 84, borderRadius: 42, justifyContent: "center", alignItems: "center", marginBottom: 16 },
   emptyTitle: { fontSize: 17, fontWeight: "700", color: "#1A1035", marginBottom: 6 },
   emptySub: { fontSize: 14, color: "#A89DD0", textAlign: "center" },
 
-  /* TYPING */
   typingRow: { flexDirection: "row", alignItems: "flex-end", paddingHorizontal: 16, paddingBottom: 6, gap: 8 },
   typingAvatar: { width: 28, height: 28, borderRadius: 14, justifyContent: "center", alignItems: "center" },
   typingBubble: {
@@ -839,7 +775,6 @@ const s = StyleSheet.create({
   },
   typingDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#C084FC" },
 
-  /* REPLY BAR */
   replyBar: {
     flexDirection: "row", alignItems: "center",
     backgroundColor: "#FFF", borderTopWidth: 1, borderTopColor: "#EEE9FF",
@@ -851,7 +786,6 @@ const s = StyleSheet.create({
   replyBarMsg: { fontSize: 13, color: "#A89DD0" },
   replyBarX: { padding: 5 },
 
-  /* INPUT BAR */
   inputBar: {
     flexDirection: "row", alignItems: "flex-end",
     paddingHorizontal: 10, paddingTop: 10,
@@ -872,7 +806,6 @@ const s = StyleSheet.create({
     shadowColor: "#7C5CFC", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.35, shadowRadius: 6, elevation: 5,
   },
 
-  /* IMAGE VIEWER */
   viewerBg: { flex: 1, backgroundColor: "rgba(0,0,0,0.94)", justifyContent: "center", alignItems: "center" },
   viewerCloseBtn: { position: "absolute", top: Platform.OS === "ios" ? 54 : 34, right: 18, zIndex: 10, borderRadius: 22, overflow: "hidden" },
   viewerCloseBlur: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 22, backgroundColor: "rgba(255,255,255,0.12)" },

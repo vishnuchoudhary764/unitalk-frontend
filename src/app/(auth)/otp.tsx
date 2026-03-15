@@ -32,7 +32,7 @@ export default function OtpScreen() {
         alert("OTP verified")
       }
 
-      // ✅ OTP verified
+     
      router.replace({
   pathname: "/(auth)/signup",
   params: { email },

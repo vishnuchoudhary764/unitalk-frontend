@@ -17,7 +17,6 @@ export default function SplashScreen() {
   const bounceAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // 🔹 Start animation
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -40,7 +39,6 @@ export default function SplashScreen() {
       ),
     ]).start();
 
-    // 🔐 Auth check (JWT based)
     const checkAuth = async () => {
       const token = await AsyncStorage.getItem("token");
 
@@ -52,7 +50,6 @@ export default function SplashScreen() {
       }
     };
 
-    // ⏳ Splash delay
     const timer = setTimeout(checkAuth, 2500);
 
     return () => clearTimeout(timer);

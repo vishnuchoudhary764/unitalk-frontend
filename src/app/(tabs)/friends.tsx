@@ -1,4 +1,3 @@
-// app/friends.tsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -86,9 +85,8 @@ export default function FriendsScreen() {
       setOnlineIds((prev) => { const n = new Set(prev); n.delete(userId); return n; });
     });
 
-    // Update preview when a new message arrives
     socket.on("new-private-message", (msg: any) => {
-      const friendId = msg.sender; // message received from friend
+      const friendId = msg.sender; 
       setPreviews((prev) => ({
         ...prev,
         [friendId]: {
@@ -110,7 +108,6 @@ export default function FriendsScreen() {
     setFiltered(result);
   }, [search, friends, activeFilter, onlineIds]);
 
-  // Merge live online status into list
   const mergedFiltered = filtered.map((f) => ({
     ...f,
     isOnline: onlineIds.has(f._id),
@@ -133,7 +130,6 @@ export default function FriendsScreen() {
       setFriends(friendsList);
       setFiltered(friendsList);
 
-      // Seed initial online state
       const initial = new Set<string>(
         friendsList.filter((f: any) => f.isOnline).map((f: any) => f._id)
       );
@@ -169,7 +165,6 @@ export default function FriendsScreen() {
         ],
       }}
     >
-      {/* Entire card navigates to private chat */}
       <TouchableOpacity
         style={styles.card}
         activeOpacity={0.7}
@@ -180,7 +175,6 @@ export default function FriendsScreen() {
           })
         }
       >
-        {/* Avatar */}
         <View style={styles.avatarContainer}>
           {item.profilePic ? (
             <Image
@@ -200,7 +194,6 @@ export default function FriendsScreen() {
           {item.isOnline && <View style={styles.onlineDot} />}
         </View>
 
-        {/* Info */}
         <View style={styles.info}>
           <Text style={styles.friendName}>{item.name}</Text>
           <View style={styles.previewRow}>
@@ -216,7 +209,6 @@ export default function FriendsScreen() {
           </View>
         </View>
 
-        {/* Unread badge */}
         {unread > 0 && (
           <View style={styles.unreadBadge}>
             <Text style={styles.unreadText}>{unread > 99 ? "99+" : unread}</Text>
@@ -234,7 +226,6 @@ export default function FriendsScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -257,7 +248,6 @@ export default function FriendsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Friends List */}
       <FlatList
         data={mergedFiltered}
         keyExtractor={(item) => item._id}

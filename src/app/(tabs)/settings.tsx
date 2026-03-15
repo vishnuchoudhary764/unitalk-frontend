@@ -1,4 +1,3 @@
-// app/settings.tsx
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -56,17 +55,14 @@ export default function Settings() {
 
  const loadUser = async () => {
   try {
-    // 1️⃣ Load cached user first (fast UI)
     const storedUser = await AsyncStorage.getItem("user");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
 
-    // 2️⃣ Get token
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
 
-    // 3️⃣ Fetch latest profile
     const res = await fetch(`${BASE_URL}/api/auth/profile`, {
       method: "GET",
       headers: {
@@ -82,7 +78,6 @@ export default function Settings() {
       return;
     }
 
-    // 4️⃣ Update state + storage
     if (data.user) {
       setUser(data.user);
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
@@ -92,7 +87,6 @@ export default function Settings() {
     console.log("fetch profile error:", e);
   }
 };
-  // ✅ Camera button — pick image, upload to Cloudinary, save to DB
   const handleChangePhoto = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -113,14 +107,12 @@ export default function Settings() {
 
       const asset = result.assets[0];
 
-      // Show preview immediately
       setUser((prev) => prev ? { ...prev, profilePic: asset.uri } : prev);
       setUploading(true);
 
       const token = await AsyncStorage.getItem("token");
       const base64Image = `data:image/jpeg;base64,${asset.base64}`;
 
-      // Step 1: Upload to Cloudinary
       const uploadRes = await fetch(`${BASE_URL}/api/auth/upload-profile-pic`, {
         method: "POST",
         headers: {
@@ -134,7 +126,6 @@ export default function Settings() {
 
       if (!uploadRes.ok) {
         Alert.alert("Upload failed", uploadData.message || "Could not upload image");
-        // Revert preview
         const storedUser = await AsyncStorage.getItem("user");
         if (storedUser) setUser(JSON.parse(storedUser));
         return;
@@ -142,7 +133,6 @@ export default function Settings() {
 
       const cloudinaryUrl = uploadData.url;
 
-      // Step 2: Save Cloudinary URL to DB
       const saveRes = await fetch(`${BASE_URL}/api/auth/update-profile`, {
         method: "PUT",
         headers: {
@@ -157,12 +147,11 @@ export default function Settings() {
         return;
       }
 
-      // Step 3: Update local state + AsyncStorage
       const updatedUser = { ...user!, profilePic: cloudinaryUrl };
       setUser(updatedUser);
       await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
 
-      Alert.alert("✅ Done", "Profile picture updated!");
+      Alert.alert("Done", "Profile picture updated!");
     } catch (e) {
       console.log("handleChangePhoto error:", e);
       Alert.alert("Error", "Something went wrong. Please try again.");
@@ -176,7 +165,7 @@ const handleLogout = async () => {
   try {
     const token = await AsyncStorage.getItem("token");
     if (token) {
-      await fetch(`${BASE_URL}/api/auth/logout`, {   // ✅ was /api/logout — WRONG
+      await fetch(`${BASE_URL}/api/auth/logout`, {  
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -187,7 +176,6 @@ const handleLogout = async () => {
   } catch (e) {
     console.log("Logout API failed (ignored)", e);
   } finally {
-    // Always clear local storage and redirect — even if API call fails
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
     router.replace("/login");
@@ -325,7 +313,6 @@ const handleLogout = async () => {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color="#1F2937" />
@@ -339,7 +326,6 @@ const handleLogout = async () => {
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
-          {/* Profile Card */}
           <View style={styles.profileCard}>
             <LinearGradient
               colors={["#667EEA", "#764BA2"]}
@@ -351,7 +337,6 @@ const handleLogout = async () => {
               <View style={[styles.orb, { bottom: -30, left: -20, width: 80, height: 80 }]} />
 
               <View style={styles.profileContent}>
-                {/* ✅ Avatar with working camera button */}
                 <View style={styles.avatarWrapper}>
                   {user.profilePic ? (
                     <Image source={{ uri: user.profilePic }} style={styles.avatar} />
@@ -363,7 +348,6 @@ const handleLogout = async () => {
                     </View>
                   )}
 
-                  {/* ✅ Camera button */}
                   <TouchableOpacity
                     style={styles.editAvatarButton}
                     onPress={handleChangePhoto}
@@ -394,7 +378,6 @@ const handleLogout = async () => {
                 </View>
               </View>
 
-              {/* Uploading status */}
               {uploading && (
                 <View style={styles.uploadingBanner}>
                   <ActivityIndicator size="small" color="#FFFFFF" />
@@ -404,7 +387,6 @@ const handleLogout = async () => {
             </LinearGradient>
           </View>
 
-          {/* Account Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Account</Text>
             <View style={styles.sectionCard}>
@@ -414,7 +396,6 @@ const handleLogout = async () => {
             </View>
           </View>
 
-          {/* Preferences Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Preferences</Text>
             <View style={styles.sectionCard}>
@@ -424,7 +405,6 @@ const handleLogout = async () => {
             </View>
           </View>
 
-          {/* Support Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Support</Text>
             <View style={styles.sectionCard}>
@@ -434,7 +414,6 @@ const handleLogout = async () => {
             </View>
           </View>
 
-          {/* Logout */}
           <View style={styles.section}>
             <TouchableOpacity
               style={styles.logoutButton}
@@ -481,7 +460,6 @@ const styles = StyleSheet.create({
 
   scrollContent: { paddingHorizontal: 20 },
 
-  // Profile Card
   profileCard: {
     borderRadius: 24, overflow: "hidden", marginBottom: 28,
     shadowColor: "#667EEA", shadowOffset: { width: 0, height: 8 },
@@ -500,7 +478,6 @@ const styles = StyleSheet.create({
   },
   avatarInitial: { fontSize: 32, fontWeight: "800", color: "#FFFFFF" },
 
-  // ✅ Camera button style
   editAvatarButton: {
     position: "absolute", bottom: 0, right: 0,
     width: 28, height: 28, borderRadius: 14,
@@ -509,7 +486,6 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: "#FFFFFF",
   },
 
-  // Uploading banner inside card
   uploadingBanner: {
     flexDirection: "row", alignItems: "center", gap: 8,
     marginTop: 12, backgroundColor: "rgba(0,0,0,0.2)",
@@ -529,7 +505,6 @@ const styles = StyleSheet.create({
   },
   profileTagText: { fontSize: 11, color: "rgba(255,255,255,0.95)", fontWeight: "600" },
 
-  // Sections
   section: { marginBottom: 24 },
   sectionTitle: {
     fontSize: 13, fontWeight: "700", color: "#9CA3AF",
@@ -552,7 +527,6 @@ const styles = StyleSheet.create({
   settingValue: { fontSize: 14, color: "#9CA3AF", fontWeight: "500" },
   rowDivider: { height: 1, backgroundColor: "#F9FAFB", marginLeft: 72 },
 
-  // Logout
   logoutButton: {
     backgroundColor: "#FFFFFF", borderRadius: 20,
     paddingHorizontal: 18, paddingVertical: 14,

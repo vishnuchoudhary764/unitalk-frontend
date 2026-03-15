@@ -1,4 +1,3 @@
-// app/home.tsx
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
@@ -194,7 +193,6 @@ export default function HomeScreen() {
         if (!token) { router.replace("/(auth)/login"); return; }
         const socket = io(BASE_URL, { auth: { token }, transports: ["websocket"], forceNew: true });
         socketRef.current = socket;
-        socket.on("connect", () => console.log("✅ SOCKET CONNECTED:", socket.id));
         socket.on("waiting", () => setIsSearching(true));
         socket.on("match-found", () => { setIsSearching(false); stopPulse(); router.push("/(tabs)/chat"); });
         socket.on("friend-request-accepted", ({ friendId }) => {
@@ -249,7 +247,6 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={["#F0EEFF", "#EAE6FF", "#F5F3FF"]} style={styles.gradientBackground} />
 
-      {/* ── HEADER ── */}
       <View style={styles.header}>
         <Animated.View style={[styles.brandContainer, { opacity: logoOpacityAnim, transform: [{ scale: logoScaleAnim }] }]}>
           <View style={styles.logoWrapper}>
@@ -278,11 +275,9 @@ export default function HomeScreen() {
 
       <View style={styles.headerDivider} />
 
-      {/* ── SCROLL CONTENT ── */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
-          {/* HERO */}
           <View style={styles.heroSection}>
             <LinearGradient colors={["#a790e2", "#4835d3"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroGradient}>
               <View style={styles.heroDecorations}>
@@ -320,7 +315,6 @@ export default function HomeScreen() {
             </LinearGradient>
           </View>
 
-          {/* FRIEND REQUESTS */}
           {requests.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -365,7 +359,6 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* FRIENDS */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
@@ -413,7 +406,6 @@ export default function HomeScreen() {
         </Animated.View>
       </ScrollView>
 
-      {/* ── PROFILE POPUP ── */}
       {profileVisible && (
         <>
           <TouchableWithoutFeedback onPress={closeProfile}>
@@ -594,7 +586,6 @@ const styles = StyleSheet.create({
   friendStatusOnline: { color: "#10B981", fontWeight: "600" },
   emptyText: { textAlign: "center", color: "#9CA3AF", fontSize: 14, paddingVertical: 20 },
 
-  /* ── POPUP ── */
   popupBackdrop: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(20, 10, 50, 0.18)" },
   popupWrapper: { position: "absolute", top: 88, right: 14, width: 275, borderRadius: 20, overflow: "hidden" },
   popupBlur: { borderRadius: 20, overflow: "hidden" },

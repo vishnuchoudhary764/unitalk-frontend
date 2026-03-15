@@ -26,8 +26,8 @@ export default function SignupScreen() {
   const [name, setName] = useState("");
   const [gender, setGender] = useState("");
   const [password, setPassword] = useState("");
-  const [profilePicUrl, setProfilePicUrl] = useState<string>(""); // ✅ Cloudinary URL
-  const [localImageUri, setLocalImageUri] = useState<string>(""); // ✅ local preview
+  const [profilePicUrl, setProfilePicUrl] = useState<string>(""); 
+  const [localImageUri, setLocalImageUri] = useState<string>(""); 
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,7 +37,6 @@ export default function SignupScreen() {
     (gender === "Male" || gender === "Female") &&
     password.length >= 6;
 
-  // ✅ Pick image from gallery and upload to Cloudinary
   const pickImage = async () => {
     try {
       const permission =
@@ -55,15 +54,14 @@ export default function SignupScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
-        base64: true, // ✅ needed for Cloudinary upload
+        base64: true, 
       });
 
       if (result.canceled || !result.assets[0]) return;
 
       const asset = result.assets[0];
-      setLocalImageUri(asset.uri); // show preview immediately
+      setLocalImageUri(asset.uri); 
 
-      // Upload to Cloudinary via backend
       setUploading(true);
       const base64Image = `data:image/jpeg;base64,${asset.base64}`;
 
@@ -77,11 +75,11 @@ export default function SignupScreen() {
 
       if (!res.ok) {
         Alert.alert("Upload failed", data.message || "Could not upload image");
-        setLocalImageUri(""); // revert preview
+        setLocalImageUri(""); 
         return;
       }
 
-      setProfilePicUrl(data.url); // ✅ store Cloudinary URL
+      setProfilePicUrl(data.url); 
     } catch (err) {
       Alert.alert("Error", "Failed to pick or upload image");
     } finally {
@@ -101,7 +99,7 @@ export default function SignupScreen() {
           name,
           gender,
           password,
-          profilePic: profilePicUrl, // ✅ send Cloudinary URL
+          profilePic: profilePicUrl, 
         }),
       });
 
@@ -129,7 +127,6 @@ export default function SignupScreen() {
       <Text style={styles.title}>Sign Up</Text>
       <Text style={styles.subtitle}>Fill in your details to get started</Text>
 
-      {/* Avatar Picker */}
       <TouchableOpacity
         style={styles.avatarWrapper}
         onPress={pickImage}
@@ -142,7 +139,6 @@ export default function SignupScreen() {
             }
             style={styles.avatar}
           />
-          {/* Upload overlay */}
           <View style={styles.avatarOverlay}>
             {uploading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -160,7 +156,6 @@ export default function SignupScreen() {
         </Text>
       </TouchableOpacity>
 
-      {/* Name */}
       <Text style={styles.label}>Name</Text>
       <TextInput
         value={name}
@@ -170,7 +165,6 @@ export default function SignupScreen() {
         placeholderTextColor="#94A3B8"
       />
 
-      {/* Gender */}
       <Text style={styles.label}>Gender</Text>
       <View style={styles.genderRow}>
         {["Male", "Female"].map((item) => (
@@ -188,13 +182,12 @@ export default function SignupScreen() {
                 gender === item && styles.genderTextActive,
               ]}
             >
-              {item === "Male" ? "👨 Male" : "👩 Female"}
+              {item === "Male" ? " Male" : " Female"}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Password */}
       <Text style={styles.label}>Password</Text>
       <View style={styles.passwordWrapper}>
         <TextInput
@@ -233,7 +226,6 @@ export default function SignupScreen() {
         )}
       </TouchableOpacity>
 
-      {/* Login link */}
       <TouchableOpacity
         onPress={() => router.replace("/(auth)/login")}
         style={styles.loginLink}
@@ -332,7 +324,6 @@ const styles = StyleSheet.create({
     color: "#0F172A",
   },
 
-  // Gender
   genderRow: {
     flexDirection: "row",
     gap: 12,
@@ -364,7 +355,6 @@ const styles = StyleSheet.create({
     color: "#2563EB",
   },
 
-  // Password
   passwordWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -386,7 +376,6 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 
-  // Submit
   submitButton: {
     backgroundColor: "#2563EB",
     height: 52,
@@ -413,7 +402,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  // Login link
   loginLink: {
     alignSelf: "center",
     marginTop: 20,
