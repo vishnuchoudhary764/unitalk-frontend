@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "uniTalk",
+    "owner": "unitalk",
     "slug": "uniTalk",
     "scheme": "unitalk",
     "version": "1.0.0",
@@ -22,7 +23,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.vishnu_choudhary764.uniTalk",
+      "package": "com.unitalk.uniTalk",
       "enableProguardInReleaseBuilds": true,
       "enableShrinkResourcesInReleaseBuilds": true
     },
@@ -35,15 +36,15 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "162c098e-3610-4def-af0f-8994b8554512"
+        "projectId": "b673ac60-5533-440d-ac4a-fc0c55a9d3e0"
       }
     },
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/162c098e-3610-4def-af0f-8994b8554512",
-        "enabled": true,
+      "url": "",
+      "enabled": true,
       "checkAutomatically": "ON_LOAD"
     }
   }

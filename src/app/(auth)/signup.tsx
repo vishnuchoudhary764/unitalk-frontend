@@ -503,7 +503,7 @@ export default function SignupScreen() {
     }
   };
 
-  const handleSignup = async () => {
+ const handleSignup = async () => {
     try {
       setLoading(true);
 
@@ -521,14 +521,13 @@ export default function SignupScreen() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        Alert.alert("Error", data.message || "Signup failed");
-        return;
-      }
+     if (!res.ok) {
+  Alert.alert("Error", data.message || "Signup failed");
+  return;
+}
 
-      Alert.alert("Success", "Account created! Please log in.", [
-        { text: "OK", onPress: () => router.replace("/(auth)/login") },
-      ]);
+router.replace("/(auth)/login");
+
     } catch {
       Alert.alert("Error", "Server not reachable");
     } finally {
