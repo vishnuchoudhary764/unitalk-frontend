@@ -19,7 +19,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import BASE_URL from "../../config/api";
 
-// Height of floating BottomNav so last item is not hidden
 const NAV_BOTTOM_PADDING = Platform.OS === "ios" ? 100 : 88;
 
 interface User {
@@ -215,7 +214,6 @@ export default function Settings() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        // ✅ paddingBottom clears the floating BottomNav
         contentContainerStyle={[styles.scrollContent, { paddingBottom: NAV_BOTTOM_PADDING }]}
       >
         <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
@@ -327,12 +325,11 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
+    paddingHorizontal: 20,paddingVertical:10,paddingTop:40,
   },
   backButton: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
+    width: 40, height: 40, borderRadius: 20,
     justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
   },
 
   scrollContent: { paddingHorizontal: 20 },

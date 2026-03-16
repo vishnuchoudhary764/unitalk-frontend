@@ -88,7 +88,6 @@ export default function BottomNav({ requestCount = 0 }: BottomNavProps) {
   );
 }
 
-// NAV_HEIGHT export so screens can use it for paddingBottom
 export const NAV_HEIGHT = Platform.OS === "ios" ? 84 : 72;
 
 const styles = StyleSheet.create({

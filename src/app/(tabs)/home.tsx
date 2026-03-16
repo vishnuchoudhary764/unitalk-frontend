@@ -93,8 +93,6 @@ export default function HomeScreen() {
 
   const loadUser = async () => {
     try {
-      const storedUser = await AsyncStorage.getItem("user");
-      if (storedUser) setUser(JSON.parse(storedUser));
       const token = await AsyncStorage.getItem("token");
       if (!token) return;
       const res = await fetch(`${BASE_URL}/api/auth/profile`, {
@@ -274,7 +272,7 @@ export default function HomeScreen() {
           )}
           <TouchableOpacity style={styles.profileButton} onPress={openProfile}>
             <View style={styles.profileIconWrapper}>
-              <Ionicons name="person" size={27} color="#2c32af" />
+               <Ionicons name="person-circle-outline" size={40} color="#667EEA" />
             </View>
           </TouchableOpacity>
         </View>
@@ -330,7 +328,6 @@ export default function HomeScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <View style={styles.sectionTitleRow}>
-                  <View style={styles.sectionIconWrapper}><Ionicons name="people" size={20} color="#667EEA" /></View>
                   <Text style={styles.sectionTitle}>Friend Requests</Text>
                   <View style={styles.countBadge}><Text style={styles.countBadgeText}>{requests.length}</Text></View>
                 </View>
@@ -372,7 +369,7 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleRow}>
-                <View style={styles.sectionIconWrapper}><Ionicons name="people-circle" size={20} color="#8B5CF6" /></View>
+               
                 <Text style={styles.sectionTitle}>Your Friends</Text>
               </View>
               <TouchableOpacity onPress={() => router.push("/(tabs)/friends")}><Text style={styles.seeAllText}>See All</Text></TouchableOpacity>
@@ -495,12 +492,12 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 18, paddingTop:16, paddingBottom: 4,
+    paddingHorizontal: 18, paddingTop:20, paddingBottom: 4,
     backgroundColor: "rgba(255,255,255,0.85)",
   },
   brandContainer: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoWrapper: { width: 75, height: 75, borderRadius: 14, backgroundColor: "#fffbfb", justifyContent: "center", alignItems: "center", overflow: "hidden" },
-  logoImage: { width: 85, height: 85 },
+  logoImage: { width: 70, height: 70 },
   brandText: { justifyContent: "center" },
   headerTitle: { fontSize: 22, fontWeight: "800", color: "#a287c1", letterSpacing: -0.5, lineHeight: 24 },
   headerSubtitle: { fontSize: 11, color: "#242325", fontWeight: "600", marginTop: 1, letterSpacing: 0.3 },
@@ -535,12 +532,15 @@ const styles = StyleSheet.create({
 
   section: { marginBottom: 28 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 16 },
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  sectionIconWrapper: { width: 32, height: 32, borderRadius: 10, backgroundColor: "#FFFFFF", justifyContent: "center", alignItems: "center", elevation: 2, shadowColor: "#667EEA", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 4 },
-  sectionTitle: { fontSize: 19, fontWeight: "700", color: "#1F2937", letterSpacing: -0.3 },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, },
+  sectionTitle: {fontSize: 11,
+    fontWeight: "700",
+    color: "#9CA3AF",
+    textTransform: "uppercase",
+    letterSpacing: 1, },
   countBadge: { backgroundColor: "#667EEA", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
   countBadgeText: { color: "#FFFFFF", fontSize: 12, fontWeight: "700" },
-  seeAllText: { fontSize: 14, color: "#667EEA", fontWeight: "600" },
+  seeAllText: { fontSize: 12, color: "#667EEA", fontWeight: "600" ,textTransform: "uppercase",},
 
   requestsScroll: { paddingHorizontal: 20, gap: 16 },
   requestCard: { width: 185, backgroundColor: "#FFFFFF", borderRadius: 20, shadowColor: "#667EEA", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 },

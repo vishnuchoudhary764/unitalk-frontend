@@ -5,18 +5,18 @@ import { usePathname } from "expo-router";
 import BottomNav from "@/src/components/BottomNav";
 import { RequestCountProvider, useRequestCount } from "@/src/context/RequestCountContext";
 
-const HIDE_NAV_ROUTES = ["/private-chat", "/chat"];
+const SHOW_NAV_ROUTES = ["/home", "/friends", "/requests"];
 
 function LayoutInner() {
   const { requestCount } = useRequestCount();
   const pathname = usePathname();
 
-  const hideNav = HIDE_NAV_ROUTES.some((route) => pathname.startsWith(route));
+ const showNav = SHOW_NAV_ROUTES.includes(pathname);
 
   return (
     <View style={styles.root}>
       <Stack screenOptions={{ headerShown: false }} />
-      {!hideNav && <BottomNav requestCount={requestCount} />}
+      {showNav && <BottomNav requestCount={requestCount} />}
     </View>
   );
 }

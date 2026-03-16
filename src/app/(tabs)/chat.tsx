@@ -480,7 +480,8 @@ const s = StyleSheet.create({
 
   header: {
     flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 12, paddingVertical: 10,
+    paddingHorizontal: 12, paddingVertical: 16,
+    paddingTop:40,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1, borderBottomColor: "#EEE9FF",
     shadowColor: "#7C5CFC", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8, elevation: 4,

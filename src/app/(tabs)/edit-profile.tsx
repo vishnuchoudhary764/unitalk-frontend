@@ -455,13 +455,12 @@ const styles = StyleSheet.create({
 
   header: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingTop: 10, paddingBottom: 16,
+    paddingHorizontal: 20, paddingTop:40,paddingBottom:10,
   },
   backButton: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
+    width: 40, height: 40, borderRadius: 20, 
     justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+   
   },
   headerTitle: { fontSize: 20, fontWeight: "700", color: "#1F2937", letterSpacing: -0.3 },
 

@@ -1,7 +1,9 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   FlatList,
   StyleSheet,
@@ -35,7 +37,6 @@ export default function FriendsScreen() {
   const [friends, setFriends] = useState<any[]>([]);
   const [filtered, setFiltered] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<"all" | "online">("all");
   const [search, setSearch] = useState("");
   const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
   const [previews, setPreviews] = useState<Record<string, { lastMessage: string; unreadCount: number; lastAt: string }>>({});
@@ -48,45 +49,32 @@ export default function FriendsScreen() {
       Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 7, useNativeDriver: true }),
     ]).start();
-
     fetchFriends();
     fetchPreviews();
     connectSocket();
-
-    return () => {
-      socketRef.current?.disconnect();
-      socketRef.current = null;
-    };
+    return () => { socketRef.current?.disconnect(); socketRef.current = null; };
   }, []);
 
   const fetchPreviews = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/api/private-chat/previews`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${BASE_URL}/api/private-chat/previews`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) setPreviews(data.previews);
-    } catch (err) {
-      console.log("fetchPreviews error:", err);
-    }
+    } catch (err) { console.log("fetchPreviews error:", err); }
   };
 
   const connectSocket = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
-
     const socket = io(BASE_URL, { auth: { token }, transports: ["websocket"] });
     socketRef.current = socket;
-
     socket.on("user-online", ({ userId }: { userId: string }) => {
       setOnlineIds((prev) => { const n = new Set(prev); n.add(userId); return n; });
     });
-
     socket.on("user-offline", ({ userId }: { userId: string }) => {
       setOnlineIds((prev) => { const n = new Set(prev); n.delete(userId); return n; });
     });
-
     socket.on("new-private-message", (msg: any) => {
       const friendId = msg.sender;
       setPreviews((prev) => ({
@@ -102,47 +90,26 @@ export default function FriendsScreen() {
 
   useEffect(() => {
     let result = [...friends];
-    if (activeFilter === "online") result = result.filter((f) => onlineIds.has(f._id));
-    if (search.trim())
-      result = result.filter((f) =>
-        f.name.toLowerCase().includes(search.toLowerCase())
-      );
+    if (search.trim()) result = result.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
     setFiltered(result);
-  }, [search, friends, activeFilter, onlineIds]);
+  }, [search, friends, onlineIds]);
 
-  const mergedFiltered = filtered.map((f) => ({
-    ...f,
-    isOnline: onlineIds.has(f._id),
-  }));
+  const mergedFiltered = filtered.map((f) => ({ ...f, isOnline: onlineIds.has(f._id) }));
+  const onlineCount = mergedFiltered.filter((f) => f.isOnline).length;
 
   const fetchFriends = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/api/requests/friends`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(`${BASE_URL}/api/requests/friends`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
-
-      const friendsList: any[] = Array.isArray(data)
-        ? data
-        : Array.isArray(data.friends)
-        ? data.friends
-        : [];
-
+      const friendsList: any[] = Array.isArray(data) ? data : Array.isArray(data.friends) ? data.friends : [];
       setFriends(friendsList);
       setFiltered(friendsList);
-
-      const initial = new Set<string>(
-        friendsList.filter((f: any) => f.isOnline).map((f: any) => f._id)
-      );
-      setOnlineIds(initial);
+      setOnlineIds(new Set<string>(friendsList.filter((f: any) => f.isOnline).map((f: any) => f._id)));
     } catch (err) {
       console.log("fetchFriends error:", err);
-      setFriends([]);
-      setFiltered([]);
-    } finally {
-      setLoading(false);
-    }
+      setFriends([]); setFiltered([]);
+    } finally { setLoading(false); }
   };
 
   const getGradient = (id: string): [string, string] =>
@@ -157,37 +124,22 @@ export default function FriendsScreen() {
       <Animated.View
         style={{
           opacity: fadeAnim,
-          transform: [
-            {
-              translateY: slideAnim.interpolate({
-                inputRange: [0, 30],
-                outputRange: [0, 30 + index * 6],
-              }),
-            },
-          ],
+          transform: [{
+            translateY: slideAnim.interpolate({ inputRange: [0, 30], outputRange: [0, 30 + index * 6] }),
+          }],
         }}
       >
         <TouchableOpacity
           style={styles.card}
           activeOpacity={0.7}
-          onPress={() =>
-            router.push({
-              pathname: "/private-chat",
-              params: { friendId: item._id },
-            })
-          }
+          onPress={() => router.push({ pathname: "/private-chat", params: { friendId: item._id } })}
         >
           <View style={styles.avatarContainer}>
             {item.profilePic ? (
               <Image source={{ uri: item.profilePic }} style={styles.avatarImage} />
             ) : (
-              <LinearGradient
-                colors={getGradient(item._id)}
-                style={styles.avatarGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Ionicons name="person" size={24} color="#FFFFFF" />
+              <LinearGradient colors={getGradient(item._id)} style={styles.avatarGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Text style={styles.avatarInitial}>{item.name?.[0]?.toUpperCase() ?? "?"}</Text>
               </LinearGradient>
             )}
             {item.isOnline && <View style={styles.onlineDot} />}
@@ -195,24 +147,19 @@ export default function FriendsScreen() {
 
           <View style={styles.info}>
             <Text style={styles.friendName}>{item.name}</Text>
-            <View style={styles.previewRow}>
-              {item.isOnline ? (
-                <View style={styles.activeRow}>
-                  <Text style={styles.onlineLabel}>Active now</Text>
-                </View>
-              ) : (
-                <Text style={styles.lastMessage} numberOfLines={1}>
-                  {lastMsg || "Tap to start chatting"}
-                </Text>
-              )}
-            </View>
+            <Text style={[styles.lastMessage, item.isOnline && styles.onlineLabel]} numberOfLines={1}>
+              {item.isOnline ? "● Active now" : lastMsg || "Tap to start chatting"}
+            </Text>
           </View>
 
-          {unread > 0 && (
-            <View style={styles.unreadBadge}>
-              <Text style={styles.unreadText}>{unread > 99 ? "99+" : unread}</Text>
-            </View>
-          )}
+          <View style={styles.cardRight}>
+            {unread > 0 && (
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadText}>{unread > 99 ? "99+" : unread}</Text>
+              </View>
+            )}
+            <Ionicons name="chevron-forward" size={16} color="#C4B5FD" />
+          </View>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -220,28 +167,24 @@ export default function FriendsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={["#F8F9FA", "#E9ECEF", "#F1F3F5"]}
-        style={StyleSheet.absoluteFill}
-      />
+      <LinearGradient colors={["#f9f8fa", "#f9f9fc", "#f4f3f7"]} style={StyleSheet.absoluteFill} />
 
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Friends</Text>
-          {friends.length > 0 && (
-            <View style={styles.headerBadge}>
-              <Text style={styles.headerBadgeText}>{friends.length}</Text>
-            </View>
+        <View style={styles.searchBar}>
+          <Ionicons name="search-outline" size={18} color="#151515" />
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search friends…"
+            placeholderTextColor="#9CA3AF"
+            style={styles.searchInput}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch("")} activeOpacity={0.7}>
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
           )}
         </View>
-
-        <TouchableOpacity style={styles.addButton} onPress={fetchFriends}>
-          <Ionicons name="refresh-outline" size={22} color="#1F2937" />
-        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -249,29 +192,36 @@ export default function FriendsScreen() {
         keyExtractor={(item) => item._id}
         contentContainerStyle={[styles.listContent, { paddingBottom: NAV_BOTTOM_PADDING }]}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderItem={renderItem}
+        ListHeaderComponent={
+          mergedFiltered.length > 0 ? (
+            <Text style={styles.listLabel}>
+              {search ? `Results for "${search}"` : "All Friends"}
+            </Text>
+          ) : null
+        }
         ListEmptyComponent={
           !loading ? (
-            <Animated.View
-              style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-            >
-              <LinearGradient colors={["#EEF2FF", "#F3E8FF"]} style={styles.emptyIconCircle}>
-                <Ionicons name={search ? "search-outline" : "people-outline"} size={52} color="#667EEA" />
+            <Animated.View style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+              <LinearGradient colors={["#EDE9FE", "#EEF2FF"]} style={styles.emptyIconCircle}>
+                <Ionicons name={search ? "search-outline" : "people-outline"} size={48} color="#6D28D9" />
               </LinearGradient>
-              <Text style={styles.emptyTitle}>{search ? "No Results Found" : "No Friends Yet"}</Text>
+              <Text style={styles.emptyTitle}>{search ? "No Results" : "No Friends Yet"}</Text>
               <Text style={styles.emptyDescription}>
                 {search
                   ? `No friends matching "${search}"`
-                  : "Start anonymous chats to make new friends on campus."}
+                  : "Start anonymous chats to make friends on campus."}
               </Text>
               {!search && (
-                <TouchableOpacity style={styles.emptyAction} onPress={() => router.push("/home")} activeOpacity={0.8}>
-                  <LinearGradient colors={["#667EEA", "#764BA2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.emptyActionGradient}>
-                    <Ionicons name="chatbubbles" size={18} color="#FFFFFF" />
-                    <Text style={styles.emptyActionText}>Start Chatting</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+                <TouchableOpacity
+                               style={styles.emptyBtn}
+                               onPress={() => router.push("/home")}
+                               activeOpacity={0.8}
+                             >
+                               <Text style={styles.emptyBtnText}>Find Someone</Text>
+                               <Ionicons name="arrow-forward" size={14} color="#6366F1" />
+                             </TouchableOpacity>
               )}
             </Animated.View>
           ) : null
@@ -282,93 +232,120 @@ export default function FriendsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FA" },
+  container: { flex: 1, backgroundColor: "#F5F3FF" },
 
   header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, backgroundColor: "#592093",
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === "ios" ? 8 : 64,
+    paddingBottom: 12,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F3F4F6",
   },
 
-  backButton: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
-    justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
   },
 
-  headerCenter: { flexDirection: "row", alignItems: "center", gap: 10 },
-
-  headerTitle: { fontSize: 22, fontWeight: "800", color: "#f5f4f8", letterSpacing: -0.5 },
-
-  headerBadge: { backgroundColor: "#667EEA", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
-
-  headerBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
-
-  addButton: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
-    justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#1F2937",
+    fontWeight: "500",
+    padding: 0,
   },
 
-  listContent: { paddingHorizontal: 20, flexGrow: 1 },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingTop: 18,
+    flexGrow: 1,
+  },
+  emptyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#EEF2FF",
+  },
+
+  emptyBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6366F1",
+  },
+  listLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#9CA3AF",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
 
   card: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF",
-    borderRadius: 20, padding: 16,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 3,
-    gap: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 14,
+    shadowColor: "#6D28D9",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+    gap: 12,
   },
 
   avatarContainer: { position: "relative" },
 
-  avatarImage: { width: 56, height: 56, borderRadius: 28, backgroundColor: "#F1F5F9" },
+  avatarImage: { width: 52, height: 52, borderRadius: 26, backgroundColor: "#F1F5F9" },
 
-  avatarGradient: { width: 56, height: 56, borderRadius: 28, justifyContent: "center", alignItems: "center" },
+  avatarGradient: { width: 52, height: 52, borderRadius: 26, justifyContent: "center", alignItems: "center" },
+
+  avatarInitial: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
 
   onlineDot: {
     position: "absolute", bottom: 1, right: 1,
-    width: 14, height: 14, borderRadius: 7,
-    backgroundColor: "#10B981", borderWidth: 2.5, borderColor: "#FFFFFF",
+    width: 13, height: 13, borderRadius: 7,
+    backgroundColor: "#10B981", borderWidth: 2, borderColor: "#FFFFFF",
   },
 
-  info: { flex: 1, gap: 5 },
+  info: { flex: 1, gap: 4 },
 
-  friendName: { fontSize: 16, fontWeight: "700", color: "#1F2937", letterSpacing: -0.2 },
+  friendName: { fontSize: 15, fontWeight: "700", color: "#1F2937", letterSpacing: -0.2 },
 
-  previewRow: { flexDirection: "row", alignItems: "center" },
+  lastMessage: { fontSize: 13, color: "#9CA3AF", fontWeight: "500" },
 
-  activeRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  onlineLabel: { color: "#10B981", fontWeight: "600" },
 
-  onlineLabel: { fontSize: 13, color: "#10B981", fontWeight: "600" },
-
-  lastMessage: { fontSize: 13, color: "#6B7280", fontWeight: "500" },
+  cardRight: { alignItems: "center", gap: 6 },
 
   unreadBadge: {
-    backgroundColor: "#667EEA", minWidth: 22, height: 22,
-    borderRadius: 11, justifyContent: "center", alignItems: "center", paddingHorizontal: 5,
+    backgroundColor: "#6D28D9", minWidth: 20, height: 20,
+    borderRadius: 10, justifyContent: "center", alignItems: "center", paddingHorizontal: 5,
   },
 
-  unreadText: { color: "#FFFFFF", fontSize: 11, fontWeight: "700" },
+  unreadText: { color: "#FFFFFF", fontSize: 10, fontWeight: "700" },
 
+  // ── EMPTY ──
   emptyState: { alignItems: "center", paddingTop: 60, paddingHorizontal: 32 },
 
   emptyIconCircle: {
-    width: 110, height: 110, borderRadius: 55,
-    justifyContent: "center", alignItems: "center", marginBottom: 24,
+    width: 100, height: 100, borderRadius: 50,
+    justifyContent: "center", alignItems: "center", marginBottom: 20,
   },
 
-  emptyTitle: { fontSize: 24, fontWeight: "800", color: "#1F2937", marginBottom: 10, letterSpacing: -0.5 },
+  emptyTitle: { fontSize: 22, fontWeight: "800", color: "#1F2937", marginBottom: 8, letterSpacing: -0.5 },
 
-  emptyDescription: { fontSize: 15, color: "#6B7280", textAlign: "center", lineHeight: 22, marginBottom: 28 },
+  emptyDescription: { fontSize: 14, color: "#6B7280", textAlign: "center", lineHeight: 21, marginBottom: 28 },
 
-  emptyAction: {
-    borderRadius: 16, overflow: "hidden",
-    shadowColor: "#667EEA", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
-  },
-
-  emptyActionGradient: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 28, paddingVertical: 14,
-  },
-
-  emptyActionText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
 });

@@ -658,8 +658,9 @@ const s = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    paddingTop:40,
     paddingHorizontal: 10,
-    paddingVertical: 9,
+    paddingVertical:14,
     backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
     borderBottomColor: "#EEE9FF",
@@ -668,8 +669,9 @@ const s = StyleSheet.create({
     shadowOpacity: 0.07,
     shadowRadius: 8,
     elevation: 4,
+    
   },
-  backBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: "center", alignItems: "center", marginRight: 2 },
+  backBtn: { width: 36, height: 36, borderRadius: 18, justifyContent: "center" },
   headerMid: { flex: 1, flexDirection: "row", alignItems: "center", gap: 10 },
   hAvatarWrap: { position: "relative" },
   hAvatar: { width: 42, height: 42, borderRadius: 21, justifyContent: "center", alignItems: "center", backgroundColor: "#EDE9FF" },
@@ -679,7 +681,7 @@ const s = StyleSheet.create({
   hStatus: { fontSize: 12, color: "#B0B8C9", marginTop: 1 },
   hStatusOnline: { color: "#22C55E", fontWeight: "500" },
   hStatusTyping: { color: "#7C5CFC", fontWeight: "500" },
-  hActions: { flexDirection: "row", gap: 4 },
+  hActions: { flexDirection: "row", gap: 4,marginRight:6 },
   hBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: "#F5F3FF", justifyContent: "center", alignItems: "center" },
 
   list: { flexGrow: 1, paddingHorizontal: 12, paddingTop: 14, paddingBottom: 6 },

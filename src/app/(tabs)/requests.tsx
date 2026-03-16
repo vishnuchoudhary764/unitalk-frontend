@@ -2,39 +2,47 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
-  Alert,
   TouchableOpacity,
   FlatList,
   StyleSheet,
   SafeAreaView,
   Animated,
   Platform,
+  Image,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRequestCount } from "@/src/context/RequestCountContext";
 import BASE_URL from "../../config/api";
 
 const NAV_BOTTOM_PADDING = Platform.OS === "ios" ? 100 : 88;
 
+const AVATAR_GRADIENTS: [string, string][] = [
+  ["#6366F1", "#8B5CF6"],
+  ["#EC4899", "#F43F5E"],
+  ["#0EA5E9", "#6366F1"],
+  ["#10B981", "#0EA5E9"],
+  ["#F59E0B", "#EF4444"],
+];
+
+const getAvatarGradient = (name: string): [string, string] =>
+  AVATAR_GRADIENTS[(name?.charCodeAt(0) ?? 0) % AVATAR_GRADIENTS.length];
+
 export default function Requests() {
   const router = useRouter();
-  const { setRequestCount } = useRequestCount();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(30)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
-      Animated.spring(slideAnim, { toValue: 0, tension: 40, friction: 7, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, tension: 60, friction: 10, useNativeDriver: true }),
     ]).start();
-
     fetchRequests();
   }, []);
 
@@ -45,10 +53,7 @@ export default function Requests() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) {
-        setRequests(data.requests);
-        setRequestCount(data.requests.length); 
-      }
+      if (data.success) setRequests(data.requests);
     } finally {
       setLoading(false);
     }
@@ -62,9 +67,7 @@ export default function Requests() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ senderId: userId }),
     });
-    const updated = requests.filter((r) => r._id !== userId);
-    setRequests(updated);
-    setRequestCount(updated.length);
+    setRequests((prev) => prev.filter((r) => r._id !== userId));
     setProcessingId(null);
   };
 
@@ -76,163 +79,103 @@ export default function Requests() {
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify({ senderId: userId }),
     });
-    const updated = requests.filter((r) => r._id !== userId);
-    setRequests(updated);
-    setRequestCount(updated.length);
+    setRequests((prev) => prev.filter((r) => r._id !== userId));
     setProcessingId(null);
   };
 
   const renderItem = ({ item, index }: { item: any; index: number }) => {
     const isProcessing = processingId === item._id;
+    const grad = getAvatarGradient(item.name);
 
     return (
       <Animated.View
         style={{
           opacity: fadeAnim,
-          transform: [
-            {
-              translateY: slideAnim.interpolate({
-                inputRange: [0, 30],
-                outputRange: [0, 30 + index * 8],
-              }),
-            },
-          ],
+          transform: [{
+            translateY: slideAnim.interpolate({
+              inputRange: [0, 16],
+              outputRange: [0, 16 + index * 5],
+            }),
+          }],
         }}
       >
         <View style={styles.card}>
-          <View style={styles.cardTop}>
-            <View style={styles.avatarWrapper}>
-              <LinearGradient
-                colors={["#667EEA", "#764BA2"]}
-                style={styles.avatarGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <Ionicons name="person" size={24} color="#FFFFFF" />
+          {/* Avatar */}
+          <View style={styles.avatarWrapper}>
+            {item.profilePic ? (
+              <Image source={{ uri: item.profilePic }} style={styles.avatarImg} />
+            ) : (
+              <LinearGradient colors={grad} style={styles.avatarGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                <Text style={styles.avatarInitial}>{item.name?.[0]?.toUpperCase() ?? "?"}</Text>
               </LinearGradient>
-              <View style={styles.newBadge}>
-                <View style={styles.newBadgeDot} />
-              </View>
-            </View>
-
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>{item.name}</Text>
-              <Text style={styles.userSubtitle}>sent you a friend request</Text>
-              <View style={styles.tagRow}>
-                <View style={styles.tag}>
-                  <Ionicons name="school-outline" size={12} color="#667EEA" />
-                  <Text style={styles.tagText}>College Student</Text>
-                </View>
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.profileArrow}>
-              <Ionicons name="chevron-forward" size={20} color="#CBD5E0" />
-            </TouchableOpacity>
+            )}
+            <View style={styles.newDot} />
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.info}>
+            <Text style={styles.userName}>{item.name}</Text>
+            <Text style={styles.userSub}>Wants to connect with you</Text>
+          </View>
 
           <View style={styles.actions}>
             <TouchableOpacity
-              style={[styles.rejectButton, isProcessing && styles.buttonDisabled]}
+              style={[styles.declineBtn, isProcessing && styles.btnDisabled]}
               onPress={() => rejectRequest(item._id)}
               disabled={isProcessing}
               activeOpacity={0.7}
             >
-              <Ionicons name="close" size={18} color="#EF4444" />
-              <Text style={styles.rejectButtonText}>Decline</Text>
+              <Ionicons name="close" size={15} color="#9CA3AF" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.acceptButton, isProcessing && styles.buttonDisabled]}
+              style={[styles.acceptBtnWrap, isProcessing && styles.btnDisabled]}
               onPress={() => acceptRequest(item._id)}
               disabled={isProcessing}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              <LinearGradient
-                colors={isProcessing ? ["#CBD5E0", "#CBD5E0"] : ["#667EEA", "#764BA2"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.acceptGradient}
-              >
-                <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                <Text style={styles.acceptButtonText}>Accept</Text>
-              </LinearGradient>
+              <Ionicons name="checkmark" size={15} color="#6366F1" />
             </TouchableOpacity>
           </View>
         </View>
+
+        <View style={styles.separator} />
       </Animated.View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient colors={["#F8F9FA", "#E9ECEF", "#F1F3F5"]} style={StyleSheet.absoluteFill} />
-
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={24} color="#1F2937" />
-        </TouchableOpacity>
-
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Friend Requests</Text>
-          {requests.length > 0 && (
-            <View style={styles.headerBadge}>
-              <Text style={styles.headerBadgeText}>{requests.length}</Text>
-            </View>
-          )}
-        </View>
-
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchRequests}>
-          <Ionicons name="refresh-outline" size={22} color="#1F2937" />
-        </TouchableOpacity>
-      </View>
-
-      {!loading && requests.length > 0 && (
-        <Animated.View style={{ opacity: fadeAnim, paddingHorizontal: 20, marginBottom: 16 }}>
-          <View style={styles.summaryBar}>
-            <View style={styles.summaryIconWrapper}>
-              <Ionicons name="people" size={20} color="#667EEA" />
-            </View>
-            <Text style={styles.summaryText}>
-              <Text style={styles.summaryCount}>{requests.length} </Text>
-              {requests.length === 1 ? "person wants" : "people want"} to connect with you
-            </Text>
-          </View>
-        </Animated.View>
-      )}
 
       <FlatList
         data={requests}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={[styles.listContent, { paddingBottom: NAV_BOTTOM_PADDING }]}
+        contentContainerStyle={[styles.listContent, { paddingBottom: NAV_BOTTOM_PADDING, paddingTop: 8 }]}
         showsVerticalScrollIndicator={false}
-        ItemSeparatorComponent={() => <View style={{ height: 14 }} />}
         renderItem={renderItem}
+        ListHeaderComponent={
+          requests.length > 0 ? (
+            <Text style={styles.sectionLabel}>
+              PENDING · {requests.length}
+            </Text>
+          ) : null
+        }
         ListEmptyComponent={
           !loading ? (
-            <Animated.View
-              style={[styles.emptyState, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}
-            >
-              <LinearGradient colors={["#F3E8FF", "#EEF2FF"]} style={styles.emptyIconCircle}>
-                <Ionicons name="people-outline" size={52} color="#667EEA" />
-              </LinearGradient>
-              <Text style={styles.emptyTitle}>All Caught Up!</Text>
-              <Text style={styles.emptyDescription}>
-                No pending friend requests right now.{"\n"}
-                Start an anonymous chat to meet new people.
+            <Animated.View style={[styles.emptyState, { opacity: fadeAnim }]}>
+              <View style={styles.emptyIconWrap}>
+                <Ionicons name="mail-open-outline" size={36} color="#D1D5DB" />
+              </View>
+              <Text style={styles.emptyTitle}>No Requests</Text>
+              <Text style={styles.emptyDesc}>
+                You're all caught up. Start chatting{"\n"}to meet new people.
               </Text>
-              <TouchableOpacity style={styles.emptyAction} onPress={() => router.push("/home")} activeOpacity={0.8}>
-                <LinearGradient
-                  colors={["#667EEA", "#764BA2"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.emptyActionGradient}
-                >
-                  <Ionicons name="chatbubbles" size={18} color="#FFFFFF" />
-                  <Text style={styles.emptyActionText}>Start Chatting</Text>
-                </LinearGradient>
+              <TouchableOpacity
+                style={styles.emptyBtn}
+                onPress={() => router.push("/home")}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.emptyBtnText}>Find Someone</Text>
+                <Ionicons name="arrow-forward" size={14} color="#6366F1" />
               </TouchableOpacity>
             </Animated.View>
           ) : null
@@ -243,131 +186,167 @@ export default function Requests() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8F9FA" },
-
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, backgroundColor: "#592093",
+  container: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
   },
 
-  backButton: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
-    justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  listContent: {
+    paddingHorizontal: 16,
+    flexGrow: 1,
+   marginTop:20,
   },
 
-  headerCenter: { flexDirection: "row", alignItems: "center", gap: 10 },
-
-  headerTitle: { fontSize: 22, fontWeight: "800", color: "#f7f8fa", letterSpacing: -0.5 },
-
-  headerBadge: { backgroundColor: "#667EEA", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 12 },
-
-  headerBadgeText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
-
-  refreshButton: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFFFFF",
-    justifyContent: "center", alignItems: "center",
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2,
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#9CA3AF",
+    letterSpacing: 1.5,
+    marginBottom: 8,
+    marginLeft: 4,
   },
-
-  summaryBar: {
-    flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF",
-    paddingHorizontal: 16, paddingVertical: 12, borderRadius: 16, gap: 12,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2,
-  },
-
-  summaryIconWrapper: {
-    width: 36, height: 36, borderRadius: 12, backgroundColor: "#EEF2FF",
-    justifyContent: "center", alignItems: "center",
-  },
-
-  summaryText: { fontSize: 14, color: "#6B7280", fontWeight: "500" },
-
-  summaryCount: { fontWeight: "700", color: "#667EEA" },
-
-  listContent: { paddingHorizontal: 20, flexGrow: 1 },
 
   card: {
-    backgroundColor: "#FFFFFF", borderRadius: 20, padding: 18,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 3,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
 
-  cardTop: { flexDirection: "row", alignItems: "center", gap: 14 },
+  separator: {
+    height: 1,
+    backgroundColor: "#F3F4F6",
+    marginLeft: 76,
+  },
 
   avatarWrapper: { position: "relative" },
 
-  avatarGradient: { width: 60, height: 60, borderRadius: 30, justifyContent: "center", alignItems: "center" },
-
-  newBadge: {
-    position: "absolute", top: 2, right: 2,
-    width: 14, height: 14, borderRadius: 7, backgroundColor: "#FFFFFF",
-    justifyContent: "center", alignItems: "center",
+  avatarImg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: "#F1F5F9",
   },
 
-  newBadgeDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#10B981" },
-
-  userInfo: { flex: 1, gap: 4 },
-
-  userName: { fontSize: 17, fontWeight: "700", color: "#1F2937", letterSpacing: -0.2 },
-
-  userSubtitle: { fontSize: 13, color: "#6B7280", fontWeight: "500" },
-
-  tagRow: { flexDirection: "row", gap: 6, marginTop: 4 },
-
-  tag: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "#EEF2FF", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+  avatarGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  tagText: { fontSize: 11, color: "#667EEA", fontWeight: "600" },
-
-  profileArrow: { padding: 4 },
-
-  divider: { height: 1, backgroundColor: "#F3F4F6", marginVertical: 14 },
-
-  actions: { flexDirection: "row", gap: 12 },
-
-  rejectButton: {
-    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    paddingVertical: 13, borderRadius: 14, backgroundColor: "#FEF2F2",
-    borderWidth: 1.5, borderColor: "#FECACA",
+  avatarInitial: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 
-  rejectButtonText: { fontSize: 15, fontWeight: "700", color: "#EF4444" },
-
-  acceptButton: {
-    flex: 1, borderRadius: 14, overflow: "hidden",
-    shadowColor: "#667EEA", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
+  newDot: {
+    position: "absolute",
+    bottom: 1,
+    right: 1,
+    width: 11,
+    height: 11,
+    borderRadius: 6,
+    backgroundColor: "#10B981",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
 
-  acceptGradient: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 13,
+  info: {
+    flex: 1,
+    gap: 2,
   },
 
-  acceptButtonText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-
-  buttonDisabled: { opacity: 0.5 },
-
-  emptyState: { flex: 1, alignItems: "center", paddingTop: 80, paddingHorizontal: 32 },
-
-  emptyIconCircle: {
-    width: 110, height: 110, borderRadius: 55,
-    justifyContent: "center", alignItems: "center", marginBottom: 24,
+  userName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#111827",
+    letterSpacing: -0.2,
   },
 
-  emptyTitle: { fontSize: 24, fontWeight: "800", color: "#1F2937", marginBottom: 12, letterSpacing: -0.5 },
-
-  emptyDescription: { fontSize: 15, color: "#6B7280", textAlign: "center", lineHeight: 22, marginBottom: 32 },
-
-  emptyAction: {
-    borderRadius: 16, overflow: "hidden",
-    shadowColor: "#667EEA", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 4,
+  userSub: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontWeight: "400",
   },
 
-  emptyActionGradient: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    paddingHorizontal: 28, paddingVertical: 14,
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 
-  emptyActionText: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
+  declineBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  acceptBtnWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: "#EEF2FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  btnDisabled: { opacity: 0.4 },
+
+  emptyState: {
+    alignItems: "center",
+    paddingTop: 80,
+    paddingHorizontal: 32,
+  },
+
+  emptyIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "#F3F4F6",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+    marginBottom: 6,
+    letterSpacing: -0.3,
+  },
+
+  emptyDesc: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+
+  emptyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#EEF2FF",
+  },
+
+  emptyBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6366F1",
+  },
 });
